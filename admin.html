@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="robots" content="noindex, nofollow">
+    <title>Yönetici Paneli</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            color: #fff;
+        }
+
+        .panel {
+            width: 100%;
+            max-width: 440px;
+            padding: 32px 26px;
+            background: rgba(255, 255, 255, 0.06);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            border-radius: 20px;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.3);
+        }
+
+        h1 { font-size: 1.35rem; font-weight: 500; margin-bottom: 6px; text-align: center; }
+        .sub { font-size: 0.85rem; opacity: 0.65; text-align: center; margin-bottom: 22px; }
+
+        label { display: block; font-size: 0.8rem; opacity: 0.7; margin: 14px 0 6px; }
+
+        input, textarea {
+            width: 100%;
+            padding: 12px 14px;
+            font-size: 1rem;
+            font-family: inherit;
+            color: #fff;
+            background: rgba(255, 255, 255, 0.08);
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            border-radius: 12px;
+            outline: none;
+            transition: all 0.3s ease;
+            color-scheme: dark;
+        }
+
+        input:focus, textarea:focus {
+            border-color: #e94560;
+            background: rgba(233, 69, 96, 0.15);
+            box-shadow: 0 0 15px rgba(233, 69, 96, 0.3);
+        }
+
+        textarea { min-height: 170px; resize: vertical; line-height: 1.5; }
+
+        .count { font-size: 0.75rem; opacity: 0.5; text-align: right; margin-top: 4px; }
+
+        button {
+            width: 100%;
+            margin-top: 18px;
+            padding: 14px;
+            font-size: 1.02rem;
+            font-weight: 600;
+            border: none;
+            border-radius: 12px;
+            background: linear-gradient(135deg, #e94560, #c23a51);
+            color: #fff;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        button:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(233, 69, 96, 0.4); }
+        button:disabled { opacity: 0.5; cursor: wait; transform: none; box-shadow: none; }
+
+        .row { display: flex; gap: 10px; }
+        .row button { margin-top: 12px; }
+
+        button.ghost {
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .msg { min-height: 22px; margin-top: 14px; font-size: 0.88rem; text-align: center; }
+        .msg.ok { color: #7bed9f; }
+        .msg.err { color: #ff6b6b; }
+    </style>
+</head>
+<body>
+
+    <!-- GİRİŞ -->
+    <div class="panel" id="loginBox">
+        <h1>Yönetici Girişi 🔐</h1>
+        <p class="sub">Sadece sen girebilirsin</p>
+
+        <label for="email">E-posta</label>
+        <input type="email" id="email" autocomplete="username">
+
+        <label for="sifre">Şifre</label>
+        <input type="password" id="sifre" autocomplete="current-password">
+
+        <button id="girisBtn">Giriş yap</button>
+        <p class="msg" id="loginMsg"></p>
+    </div>
+
+    <!-- NOT DÜZENLEME -->
+    <div class="panel" id="editBox" style="display:none">
+        <h1>💌 Günün Notu</h1>
+        <p class="sub">Kaydedince siteye anında düşer</p>
+
+        <label for="tarih">Hangi gün için?</label>
+        <input type="date" id="tarih">
+
+        <label for="metin">Not</label>
+        <textarea id="metin" placeholder="Bugünkü notunu yaz aşkım..."></textarea>
+        <div class="count"><span id="sayi">0</span> karakter</div>
+
+        <button id="kaydetBtn">Kaydet</button>
+        <div class="row">
+            <button class="ghost" id="silBtn">Bu günün notunu sil</button>
+            <button class="ghost" id="cikisBtn">Çıkış</button>
+        </div>
+        <p class="msg" id="editMsg"></p>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js";
+        import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged }
+            from "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
+        import { getFirestore, doc, getDoc, setDoc, deleteDoc, serverTimestamp }
+            from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
+
+        // ====== BURAYI KENDİ FIREBASE BİLGİLERİNLE DEĞİŞTİR ======
+        const firebaseConfig = {
+            apiKey: "BURAYA",
+            authDomain: "BURAYA",
+            projectId: "BURAYA",
+            storageBucket: "BURAYA",
+            messagingSenderId: "BURAYA",
+            appId: "BURAYA"
+        };
+        // =========================================================
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+
+        const $ = (id) => document.getElementById(id);
+
+        function mesaj(el, text, tur) {
+            el.textContent = text;
+            el.className = 'msg ' + (tur || '');
+        }
+
+        function bugunAnahtar() {
+            const b = new Date();
+            return `${b.getFullYear()}-${String(b.getMonth() + 1).padStart(2, '0')}-${String(b.getDate()).padStart(2, '0')}`;
+        }
+
+        // ----- Giriş / çıkış -----
+        async function girisYap() {
+            const btn = $('girisBtn');
+            btn.disabled = true;
+            mesaj($('loginMsg'), 'Giriş yapılıyor...');
+            try {
+                await signInWithEmailAndPassword(auth, $('email').value.trim(), $('sifre').value);
+                mesaj($('loginMsg'), '');
+            } catch (e) {
+                mesaj($('loginMsg'), 'E-posta ya da şifre hatalı.', 'err');
+            }
+            btn.disabled = false;
+        }
+
+        $('girisBtn').addEventListener('click', girisYap);
+        $('sifre').addEventListener('keydown', (e) => { if (e.key === 'Enter') girisYap(); });
+        $('cikisBtn').addEventListener('click', () => signOut(auth));
+
+        onAuthStateChanged(auth, (user) => {
+            $('loginBox').style.display = user ? 'none' : 'block';
+            $('editBox').style.display = user ? 'block' : 'none';
+            if (user) {
+                if (!$('tarih').value) $('tarih').value = bugunAnahtar();
+                notuYukle();
+            }
+        });
+
+        // ----- Not yükle / kaydet / sil -----
+        async function notuYukle() {
+            const gun = $('tarih').value;
+            if (!gun) return;
+            mesaj($('editMsg'), 'Yükleniyor...');
+            try {
+                const snap = await getDoc(doc(db, 'notlar', gun));
+                $('metin').value = snap.exists() ? snap.data().metin : '';
+                $('sayi').textContent = $('metin').value.length;
+                mesaj($('editMsg'), snap.exists() ? 'Bu güne ait kayıtlı not yüklendi.' : 'Bu gün için henüz not yok.');
+            } catch (e) {
+                mesaj($('editMsg'), 'Not okunamadı: ' + e.message, 'err');
+            }
+        }
+
+        $('tarih').addEventListener('change', notuYukle);
+        $('metin').addEventListener('input', () => { $('sayi').textContent = $('metin').value.length; });
+
+        $('kaydetBtn').addEventListener('click', async () => {
+            const gun = $('tarih').value;
+            const metin = $('metin').value.trim();
+            if (!gun) return mesaj($('editMsg'), 'Bir tarih seç.', 'err');
+            if (!metin) return mesaj($('editMsg'), 'Not boş olamaz.', 'err');
+
+            $('kaydetBtn').disabled = true;
+            try {
+                await setDoc(doc(db, 'notlar', gun), { metin, guncelleme: serverTimestamp() });
+                mesaj($('editMsg'), 'Kaydedildi ✅ Site güncellendi.', 'ok');
+            } catch (e) {
+                mesaj($('editMsg'), 'Kaydedilemedi: ' + e.message, 'err');
+            }
+            $('kaydetBtn').disabled = false;
+        });
+
+        $('silBtn').addEventListener('click', async () => {
+            const gun = $('tarih').value;
+            if (!gun || !confirm(gun + ' tarihli not silinsin mi?')) return;
+            try {
+                await deleteDoc(doc(db, 'notlar', gun));
+                $('metin').value = '';
+                $('sayi').textContent = '0';
+                mesaj($('editMsg'), 'Silindi. O gün sitedeki hazır listeden not gösterilecek.', 'ok');
+            } catch (e) {
+                mesaj($('editMsg'), 'Silinemedi: ' + e.message, 'err');
+            }
+        });
+    </script>
+</body>
+</html>
