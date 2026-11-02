@@ -169,7 +169,7 @@
                 await signInWithEmailAndPassword(auth, $('email').value.trim(), $('sifre').value);
                 mesaj($('loginMsg'), '');
             } catch (e) {
-                mesaj($('loginMsg'), 'E-posta ya da şifre hatalı.', 'err');
+               mesaj($('loginMsg'), 'Hata kodu: ' + (e.code || e.message), 'err');
             }
             btn.disabled = false;
         }
