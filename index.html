@@ -285,6 +285,81 @@
                 gap: 6px;
             }
         }
+
+        /* ===== GÜNLÜK NOT POP-UP ===== */
+        #noteOverlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.65);
+            backdrop-filter: blur(6px);
+            z-index: 1500;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        #noteOverlay.show {
+            display: flex;
+            animation: fadeIn 0.4s ease;
+        }
+
+        .note-card {
+            position: relative;
+            max-width: 380px;
+            width: 100%;
+            max-height: 80vh;
+            overflow-y: auto;
+            padding: 34px 26px 26px;
+            text-align: center;
+            background: linear-gradient(145deg, rgba(233, 69, 96, 0.22), rgba(22, 33, 62, 0.95));
+            border: 1px solid rgba(233, 69, 96, 0.45);
+            border-radius: 22px;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+            animation: popIn 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+
+        .note-heart {
+            font-size: 2.2rem;
+            margin-bottom: 6px;
+            animation: beat 1.4s ease-in-out infinite;
+        }
+
+        .note-date {
+            font-size: 0.78rem;
+            opacity: 0.6;
+            margin-bottom: 14px;
+        }
+
+        .note-text {
+            font-size: 1.05rem;
+            line-height: 1.6;
+            white-space: pre-line;
+            margin-bottom: 22px;
+        }
+
+        .note-close {
+            padding: 11px 26px;
+            width: auto;
+            font-size: 0.95rem;
+        }
+
+        #noteBtn {
+            display: none;
+            position: fixed;
+            right: 16px;
+            bottom: 18px;
+            width: 52px;
+            height: 52px;
+            padding: 0;
+            font-size: 1.5rem;
+            border-radius: 50%;
+            z-index: 500;
+        }
+
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes popIn  { from { opacity: 0; transform: scale(0.7) translateY(20px); } to { opacity: 1; transform: scale(1) translateY(0); } }
+        @keyframes beat   { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.18); } }
     </style>
 </head>
 <body>
@@ -315,6 +390,19 @@
     ">
         <img id="lightboxImg" alt="" style="max-width: 92%; max-height: 92%; border-radius: 12px; object-fit: contain;">
     </div>
+
+    <!-- GÜNLÜK NOT (lightbox'ın DIŞINDA olmalı) -->
+    <div id="noteOverlay">
+        <div class="note-card">
+            <div class="note-heart">💌</div>
+            <div class="note-date" id="noteDate"></div>
+            <div class="note-text" id="noteText"></div>
+            <button class="note-close" onclick="notuKapat()">Okudum aşkım ❤️</button>
+        </div>
+    </div>
+
+    <!-- Notu tekrar açma butonu -->
+    <button id="noteBtn" onclick="notuAc()" title="Günün notu">💌</button>
 
     <!-- ŞİFRE EKRANI -->
     <div class="container" id="loginScreen">
@@ -517,6 +605,52 @@
                 Math.floor((simdi - BASLANGIC) / 86400000);
         }
 
+        // ===== GÜNLÜK NOT =====
+        // Her gün sırayla bir sonraki not gösterilir, liste bitince başa döner.
+        // Notları istediğin kadar ekleyebilirsin (satır atlamak için \n kullan).
+        const NOTLAR = [
+            "Günaydın aşkım, bugün de seni düşünerek uyandım ❤️",
+            "Seninle her şey daha güzel. İyi ki varsın.",
+            "Bugün sadece şunu söylemek istedim: Seni çok seviyorum.",
+            "Yorulduysan bil ki yanındayım, her zaman.",
+            "Gülüşün günümün en güzel anı.",
+            // buraya yenilerini ekle...
+        ];
+
+        // Belirli bir güne özel not (YYYY-AA-GG). Bu tarihte sıradaki not yerine bu görünür.
+        const OZEL_NOTLAR = {
+            "2026-11-07": "9. ayımız kutlu olsun aşkım! 🎉\nSeni çok seviyorum.",
+            "2026-12-31": "Yeni yıla seninle girmek en büyük hediye ❤️"
+        };
+
+        function gununNotunuGetir() {
+            const bugun = new Date();
+            const anahtar = `${bugun.getFullYear()}-${String(bugun.getMonth() + 1).padStart(2, '0')}-${String(bugun.getDate()).padStart(2, '0')}`;
+
+            if (OZEL_NOTLAR[anahtar]) return OZEL_NOTLAR[anahtar];
+
+            // Başlangıçtan bu yana geçen gün sayısına göre sıradaki not
+            const gunSayisi = Math.floor((new Date(bugun.getFullYear(), bugun.getMonth(), bugun.getDate()) - BASLANGIC) / 86400000);
+            const index = ((gunSayisi % NOTLAR.length) + NOTLAR.length) % NOTLAR.length;
+            return NOTLAR[index];
+        }
+
+        function notuAc() {
+            document.getElementById('noteDate').textContent =
+                new Date().toLocaleDateString('tr-TR', { day: 'numeric', month: 'long', year: 'numeric', weekday: 'long' });
+            document.getElementById('noteText').textContent = gununNotunuGetir();
+            document.getElementById('noteOverlay').classList.add('show');
+        }
+
+        function notuKapat() {
+            document.getElementById('noteOverlay').classList.remove('show');
+        }
+
+        document.getElementById('noteOverlay').addEventListener('click', function (e) {
+            if (e.target === this) notuKapat();
+        });
+
+        // ===== ŞİFRE KONTROLÜ =====
         function checkPassword() {
             const d = day.value.padStart(2, '0');
             const m = month.value.padStart(2, '0');
@@ -532,6 +666,10 @@
 
                 sayaciGuncelle();
                 if (!sayacInterval) sayacInterval = setInterval(sayaciGuncelle, 1000);
+
+                // Günlük not pop-up'ı
+                document.getElementById('noteBtn').style.display = 'block';
+                setTimeout(notuAc, 700);
             } else {
                 errorMsg.classList.add('show');
                 document.querySelector('.date-inputs').style.animation = 'shake 0.4s';
@@ -545,3 +683,4 @@
 
 </body>
 </html>
+</document_content>
