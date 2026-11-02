@@ -134,14 +134,13 @@
             from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
 
         // ====== BURAYI KENDİ FIREBASE BİLGİLERİNLE DEĞİŞTİR ======
-  const firebaseConfig = {
-    apiKey: "AIzaSyCGJShg-OYUPmjg0D3yw2INrdfPiPPWxBU",
-    authDomain: "admin-7659a.firebaseapp.com",
-    projectId: "admin-7659a",
-    storageBucket: "admin-7659a.firebasestorage.app",
-    messagingSenderId: "155622622732",
-    appId: "1:155622622732:web:607b42a6ea36370a161029"
-};
+        const firebaseConfig = {
+            apiKey: "AIzaSyCGJShg-OYUPmjg0D3yw2INrdfPiPPWxBU",
+            authDomain: "admin-7659a.firebaseapp.com",
+            projectId: "admin-7659a",
+            storageBucket: "admin-7659a.firebasestorage.app",
+            messagingSenderId: "155622622732",
+            appId: "1:155622622732:web:607b42a6ea36370a161029"
         };
         // =========================================================
 
@@ -170,7 +169,15 @@
                 await signInWithEmailAndPassword(auth, $('email').value.trim(), $('sifre').value);
                 mesaj($('loginMsg'), '');
             } catch (e) {
-               mesaj($('loginMsg'), 'Hata kodu: ' + (e.code || e.message), 'err');
+                const kod = e.code || e.message;
+                const acik = {
+                    'auth/invalid-credential': 'E-posta ya da şifre hatalı (ya da bu kullanıcı yok).',
+                    'auth/invalid-email': 'E-posta adresi geçersiz görünüyor.',
+                    'auth/operation-not-allowed': 'Firebase\'de Email/Password girişi açık değil.',
+                    'auth/too-many-requests': 'Çok fazla deneme yapıldı, biraz bekle.',
+                    'auth/network-request-failed': 'İnternet ya da engelleyici eklenti sorunu.'
+                };
+                mesaj($('loginMsg'), (acik[kod] || 'Giriş başarısız') + ' [' + kod + ']', 'err');
             }
             btn.disabled = false;
         }

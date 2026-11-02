@@ -397,7 +397,7 @@
             <div class="note-heart">💌</div>
             <div class="note-date" id="noteDate"></div>
             <div class="note-text" id="noteText"></div>
-            <button class="note-close" onclick="notuKapat()">❤️</button>
+            <button class="note-close" onclick="notuKapat()">Okudum aşkım ❤️</button>
         </div>
     </div>
 
@@ -426,7 +426,7 @@
     <!-- GALERİ -->
     <div id="gallery">
         <div class="gallery-header">
-            <h2>Patch notları beni aradığında aktarabilirim :) sınavda da başarılar yapabileceğini biliyorum</h2>
+            <h2>Seni seviyorum beklettiğim 12 (?) dakika için de teşekkür ederim</h2>
             <p>İyi ki sen sevgilim &lt;3</p>
         </div>
 
@@ -609,7 +609,11 @@
         // Her gün sırayla bir sonraki not gösterilir, liste bitince başa döner.
         // Notları istediğin kadar ekleyebilirsin (satır atlamak için \n kullan).
         const NOTLAR = [
-            "En güzel yanı da bu. Ona aşık olmadan önce, onu zaten tanıyordum. Kusurlarını, korkularını, en kötü günlerini, en çirkin anlarını bile. Hiçbir sürpriz yoktu. Aşık olduğum kişi, hayal ettiğim biri değildi.Gerçekten tanıdığım biriydi.",
+            "Günaydın aşkım, bugün de seni düşünerek uyandım ❤️",
+            "Seninle her şey daha güzel. İyi ki varsın.",
+            "Bugün sadece şunu söylemek istedim: Seni çok seviyorum.",
+            "Yorulduysan bil ki yanındayım, her zaman.",
+            "Gülüşün günümün en güzel anı.",
             // buraya yenilerini ekle...
         ];
 
@@ -620,6 +624,9 @@
         };
 
         function gununNotunuGetir() {
+            // Yönetici panelinden girilen canlı not varsa önce o gösterilir
+            if (window.CANLI_NOT) return window.CANLI_NOT;
+
             const bugun = new Date();
             const anahtar = `${bugun.getFullYear()}-${String(bugun.getMonth() + 1).padStart(2, '0')}-${String(bugun.getDate()).padStart(2, '0')}`;
 
@@ -677,6 +684,44 @@
         }
     </script>
 
+    <!-- ===== FIREBASE: YÖNETİCİ PANELİNDEN GELEN CANLI NOT ===== -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js";
+        import { getFirestore, doc, onSnapshot }
+            from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
+
+        // ====== BURAYI KENDİ FIREBASE BİLGİLERİNLE DEĞİŞTİR (admin.html ile aynı) ======
+        const firebaseConfig = {
+            apiKey: "AIzaSyCGJShg-OYUPmjg0D3yw2INrdfPiPPWxBU",
+            authDomain: "admin-7659a.firebaseapp.com",
+            projectId: "admin-7659a",
+            storageBucket: "admin-7659a.firebasestorage.app",
+            messagingSenderId: "155622622732",
+            appId: "1:155622622732:web:607b42a6ea36370a161029"
+        };
+        // ===============================================================================
+
+        try {
+            const app = initializeApp(firebaseConfig);
+            const db = getFirestore(app);
+
+            const b = new Date();
+            const anahtar = `${b.getFullYear()}-${String(b.getMonth() + 1).padStart(2, '0')}-${String(b.getDate()).padStart(2, '0')}`;
+
+            // Bugünün notunu canlı dinle: panelden kaydedince anında buraya düşer
+            onSnapshot(doc(db, "notlar", anahtar), (snap) => {
+                window.CANLI_NOT = snap.exists() ? snap.data().metin : null;
+
+                // Pop-up o an açıksa yenilemeden güncelle
+                const overlay = document.getElementById('noteOverlay');
+                if (overlay.classList.contains('show')) {
+                    document.getElementById('noteText').textContent = gununNotunuGetir();
+                }
+            }, (err) => console.warn("Canlı not okunamadı, hazır liste kullanılacak:", err.code));
+        } catch (e) {
+            console.warn("Firebase başlatılamadı, hazır liste kullanılacak:", e);
+        }
+    </script>
+
 </body>
 </html>
-</document_content>
