@@ -177,17 +177,10 @@
         }
 
         .photos-track {
-            display: flex;
-            align-items: flex-start;
-            gap: 14px;
+            column-count: 2;       /* tarayıcı iki sütunu boy olarak dengeler */
+            column-gap: 14px;
             padding: 230px 16px 90px;
             width: 100%;
-        }
-
-        /* İki sütun: her fotoğraf sadece bir kez yer alır */
-        .photos-col {
-            flex: 1 1 0;
-            min-width: 0;
         }
 
         .photo-card {
@@ -286,7 +279,7 @@
 
         @media (max-width: 400px) {
             .photos-track {
-                gap: 10px;
+                column-gap: 10px;
                 padding: 220px 12px 90px;
             }
             .photo-card {
@@ -545,14 +538,8 @@
                 .map((k) => k.cloneNode(true));
             const tumu = [...yeniKartlar, ...hazirKartlar];
 
-            // Sırayla dağıt: 1. sola, 2. sağa, 3. sola... yan yana hep farklı fotoğraf olur
-            const sol = document.createElement('div');
-            const sag = document.createElement('div');
-            sol.className = 'photos-col';
-            sag.className = 'photos-col';
-            tumu.forEach((kart, i) => (i % 2 === 0 ? sol : sag).append(kart));
-
-            track.replaceChildren(sol, sag);
+            // Kartlar tek listeye konur; tarayıcı iki sütunu eşit boyda dengeler
+            track.replaceChildren(...tumu);
         }
 
         galeriyiKur([]); // Firebase gelmese bile hazır fotoğraflarla çalışır
