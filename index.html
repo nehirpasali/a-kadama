@@ -364,6 +364,52 @@
             z-index: 500;
         }
 
+        /* ===== 2. SAYAÇ POP-UP (7 Ağustos'tan beri) ===== */
+        #sayacBtn {
+            display: none;
+            position: fixed;
+            right: 16px;
+            bottom: 82px;
+            width: 52px;
+            height: 52px;
+            padding: 0;
+            font-size: 1.5rem;
+            border-radius: 50%;
+            z-index: 500;
+        }
+
+        .sayac-popup {
+            display: none;
+            position: fixed;
+            right: 16px;
+            bottom: 146px;
+            width: min(330px, calc(100vw - 32px));
+            padding: 18px 12px 14px;
+            text-align: center;
+            background: linear-gradient(145deg, rgba(233, 69, 96, 0.22), rgba(22, 33, 62, 0.96));
+            border: 1px solid rgba(233, 69, 96, 0.45);
+            border-radius: 20px;
+            box-shadow: 0 16px 40px rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(8px);
+            z-index: 600;
+        }
+
+        .sayac-popup.show {
+            display: block;
+            animation: sayacAcil 0.25s ease;
+        }
+
+        .sayac-popup .sayac-baslik {
+            font-size: 0.85rem;
+            opacity: 0.85;
+            margin-bottom: 10px;
+        }
+
+        @keyframes sayacAcil {
+            from { opacity: 0; transform: translateY(10px) scale(0.96); }
+            to   { opacity: 1; transform: none; }
+        }
+
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
         @keyframes popIn  { from { opacity: 0; transform: scale(0.7) translateY(20px); } to { opacity: 1; transform: scale(1) translateY(0); } }
         @keyframes beat   { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.18); } }
@@ -411,10 +457,24 @@
     <!-- Notu tekrar açma butonu -->
     <button id="noteBtn" onclick="notuAc()" title="Günün notu">💌</button>
 
+    <!-- 2. SAYAÇ POP-UP (07 Ağustos 2026'dan beri) -->
+    <div id="sayacPopup" class="sayac-popup">
+        <div class="sayac-baslik">7 Ağustos 2026'dan beri</div>
+        <div class="sayac-kutular">
+            <div class="kutu"><span id="s2Ay">0</span><small>ay</small></div>
+            <div class="kutu"><span id="s2Gun">0</span><small>gün</small></div>
+            <div class="kutu"><span id="s2Saat">00</span><small>saat</small></div>
+            <div class="kutu"><span id="s2Dk">00</span><small>dakika</small></div>
+            <div class="kutu"><span id="s2Sn">00</span><small>saniye</small></div>
+        </div>
+        <div class="sayac-toplam">Toplam <b id="toplamGun2">0</b> gün</div>
+    </div>
+    <button id="sayacBtn" title="7 Ağustos'tan beri">⏳</button>
+
     <!-- ŞİFRE EKRANI -->
     <div class="container" id="loginScreen">
         <h1></h1>
-        <p class="subtitle">pekala daha az ucube olucam artık :)</p>
+        <p class="subtitle">Artık biliyorsun zaten</p>
 
         <div class="date-inputs">
             <input type="text" id="day" maxlength="2" placeholder="GG" inputmode="numeric">
@@ -426,8 +486,8 @@
 
         <button onclick="checkPassword()">Aç</button>
 
-        <p class="error" id="errorMsg">umarım 4 ile ilgili bişi yazmamışsındır</p>
-        <p class="hint"></p>
+        <p class="error" id="errorMsg">ALLAH SENİ KAHRETMESİN PİSLİK HERİF </p>
+        <p class="hint">İpucu; Sabah saat 6 da Yavuzun arabayı gördüğümüz gün</p>
     </div>
 
     <!-- GALERİ -->
@@ -604,38 +664,60 @@
         // 07 Şubat 2026 (JavaScript'te aylar 0'dan başlar: Ocak = 0, Şubat = 1)
         // Saati de eklemek istersen: new Date(2026, 1, 7, 21, 30, 0)
         const BASLANGIC = new Date(2026, 1, 7, 0, 0, 0);
+
+        // 2. sayaç: 07 Ağustos 2026 (ay 0'dan başlar: Ağustos = 7)
+        const BASLANGIC_2 = new Date(2026, 7, 7, 0, 0, 0);
         let sayacInterval = null;
 
-        function sayaciGuncelle() {
+        // Verilen başlangıç tarihinden bu yana geçen süreyi hesaplayıp ilgili kutulara yazar
+        function sayaciHesapla(baslangic, id) {
             const simdi = new Date();
+            const pad = (n) => String(n).padStart(2, '0');
+            const yaz = (anahtar, deger) => { document.getElementById(id[anahtar]).textContent = deger; };
+
+            // Başlangıç tarihi henüz gelmediyse hepsi sıfır görünsün
+            if (simdi < baslangic) {
+                yaz('ay', 0); yaz('gun', 0); yaz('saat', '00'); yaz('dk', '00'); yaz('sn', '00'); yaz('toplam', 0);
+                return;
+            }
 
             // Takvime göre tam ay sayısı
-            let ay = (simdi.getFullYear() - BASLANGIC.getFullYear()) * 12
-                   + (simdi.getMonth() - BASLANGIC.getMonth());
-            let ankraj = new Date(BASLANGIC);
-            ankraj.setMonth(BASLANGIC.getMonth() + ay);
+            let ay = (simdi.getFullYear() - baslangic.getFullYear()) * 12
+                   + (simdi.getMonth() - baslangic.getMonth());
+            let ankraj = new Date(baslangic);
+            ankraj.setMonth(baslangic.getMonth() + ay);
             if (ankraj > simdi) {
                 ay--;
-                ankraj = new Date(BASLANGIC);
-                ankraj.setMonth(BASLANGIC.getMonth() + ay);
+                ankraj = new Date(baslangic);
+                ankraj.setMonth(baslangic.getMonth() + ay);
             }
 
             // Tam aydan sonra kalan süre
             const fark = simdi - ankraj;
-            const gun = Math.floor(fark / 86400000);
-            const saat = Math.floor((fark % 86400000) / 3600000);
-            const dk = Math.floor((fark % 3600000) / 60000);
-            const sn = Math.floor((fark % 60000) / 1000);
-
-            const pad = n => String(n).padStart(2, '0');
-            document.getElementById('sAy').textContent = ay;
-            document.getElementById('sGun').textContent = gun;
-            document.getElementById('sSaat').textContent = pad(saat);
-            document.getElementById('sDk').textContent = pad(dk);
-            document.getElementById('sSn').textContent = pad(sn);
-            document.getElementById('toplamGun').textContent =
-                Math.floor((simdi - BASLANGIC) / 86400000);
+            yaz('ay', ay);
+            yaz('gun', Math.floor(fark / 86400000));
+            yaz('saat', pad(Math.floor((fark % 86400000) / 3600000)));
+            yaz('dk', pad(Math.floor((fark % 3600000) / 60000)));
+            yaz('sn', pad(Math.floor((fark % 60000) / 1000)));
+            yaz('toplam', Math.floor((simdi - baslangic) / 86400000));
         }
+
+        // İki sayacı birden günceller (her saniye çağrılır)
+        function sayaciGuncelle() {
+            sayaciHesapla(BASLANGIC,   { ay: 'sAy',  gun: 'sGun',  saat: 'sSaat',  dk: 'sDk',  sn: 'sSn',  toplam: 'toplamGun' });
+            sayaciHesapla(BASLANGIC_2, { ay: 's2Ay', gun: 's2Gun', saat: 's2Saat', dk: 's2Dk', sn: 's2Sn', toplam: 'toplamGun2' });
+        }
+
+        // ===== YERLEŞİM: galeri, üstteki sayaç bandının altından başlasın =====
+        function yerlesimiAyarla() {
+            const banner = document.getElementById('topBanner');
+            const baslik = document.querySelector('.gallery-header');
+            if (!banner.offsetHeight) return;
+            baslik.style.top = banner.offsetHeight + 'px';
+            document.getElementById('photosTrack').style.paddingTop = (banner.offsetHeight + baslik.offsetHeight + 40) + 'px';
+        }
+        if (window.ResizeObserver) new ResizeObserver(yerlesimiAyarla).observe(document.getElementById('topBanner'));
+        window.addEventListener('resize', yerlesimiAyarla);
 
         // ===== GÜNLÜK NOT =====
         // Her gün sırayla bir sonraki not gösterilir, liste bitince başa döner.
@@ -684,6 +766,35 @@
             if (e.target === this) notuKapat();
         });
 
+        // ===== 2. SAYAÇ POP-UP =====
+        // Bilgisayar: imleç ⏳ simgesinin ya da pop-up'ın üstündeyken açık kalır, çekilince kapanır.
+        // Telefon: ⏳ simgesine dokununca açılır/kapanır, dışarı dokununca da kapanır.
+        const sayacBtn = document.getElementById('sayacBtn');
+        const sayacPopup = document.getElementById('sayacPopup');
+        const imlecVar = window.matchMedia('(hover: hover) and (pointer: fine)').matches;
+        let sayacKapatZamani = null;
+
+        function sayacAc() { clearTimeout(sayacKapatZamani); sayacPopup.classList.add('show'); }
+        function sayacKapat() { clearTimeout(sayacKapatZamani); sayacPopup.classList.remove('show'); }
+        function sayacKapatGecikmeli() { clearTimeout(sayacKapatZamani); sayacKapatZamani = setTimeout(sayacKapat, 250); }
+
+        if (imlecVar) {
+            [sayacBtn, sayacPopup].forEach((el) => {
+                el.addEventListener('mouseenter', sayacAc);
+                el.addEventListener('mouseleave', sayacKapatGecikmeli);
+            });
+            sayacBtn.addEventListener('click', sayacAc);
+        } else {
+            sayacBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                sayacPopup.classList.contains('show') ? sayacKapat() : sayacAc();
+            });
+            document.addEventListener('click', (e) => {
+                if (!sayacPopup.contains(e.target)) sayacKapat();
+            });
+        }
+        document.addEventListener('keydown', (e) => { if (e.key === 'Escape') sayacKapat(); });
+
         // ===== ŞİFRE KONTROLÜ =====
         function checkPassword() {
             const d = day.value.padStart(2, '0');
@@ -703,6 +814,7 @@
 
                 // Günlük not pop-up'ı
                 document.getElementById('noteBtn').style.display = 'block';
+                document.getElementById('sayacBtn').style.display = 'block';
                 setTimeout(notuAc, 700);
             } else {
                 errorMsg.classList.add('show');
