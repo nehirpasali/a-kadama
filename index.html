@@ -4,6 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>aşk adamıma...</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@500;600&family=Playfair+Display:ital,wght@1,500&display=swap" rel="stylesheet">
     <style>
         * {
             margin: 0;
@@ -32,6 +35,36 @@
             border: 1px solid rgba(255, 255, 255, 0.1);
             max-width: 420px;
             width: 90%;
+        }
+
+        /* ===== KİLİT EKRANI ARKA PLANI (soluk, yumuşak, göz yormayan) ===== */
+        #kilitArkaplan {
+            position: fixed;
+            inset: 0;
+            z-index: 0;
+            background: url('kilit-arkaplan.jpg') 60% center / cover no-repeat;
+            filter: blur(1.5px) saturate(0.8);
+            transform: scale(1.04);   /* blur kenarlarında açılma olmasın */
+            opacity: 0;
+            animation: arkaplanGelsin 2.5s ease forwards;
+            pointer-events: none;
+        }
+
+        /* Fotoğrafın üstüne koyu bir örtü: yazılar rahat okunsun, göz yorulmasın */
+        #kilitArkaplan::after {
+            content: "";
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(135deg, rgba(26, 26, 46, 0.58), rgba(15, 52, 96, 0.66));
+        }
+
+        @keyframes arkaplanGelsin {
+            to { opacity: 0.5; }
+        }
+
+        #loginScreen {
+            position: relative;
+            z-index: 1;
         }
 
         h1 {
@@ -178,38 +211,133 @@
 
         .photos-track {
             column-count: 2;       /* tarayıcı iki sütunu boy olarak dengeler */
-            column-gap: 14px;
+            column-gap: 16px;
             padding: 230px 16px 90px;
             width: 100%;
+            max-width: 760px;      /* bilgisayarda kartlar devasa olmasın, galeri ortada dursun */
+            margin: 0 auto;
         }
 
+        /* ===== FOTOĞRAF KARTLARI (3 tema: sinematik | pastel | minimal) =====
+           Hangi temanın kullanılacağı aşağıdaki script içinde "const TEMA" satırında seçilir. */
         .photo-card {
+            position: relative;
             break-inside: avoid;
-            margin-bottom: 14px;
-            background: rgba(255, 255, 255, 0.07);
-            border-radius: 16px;
-            overflow: hidden;
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            box-shadow: 0 10px 28px rgba(0, 0, 0, 0.3);
+            margin-bottom: 18px;
             cursor: zoom-in;
+            transition: transform 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease;
         }
 
         .photo-card img {
             width: 100%;
             height: auto;
             display: block;
-        }
-
-        .photo-caption {
-            padding: 12px 14px;
-            font-size: 0.84rem;
-            text-align: center;
-            background: rgba(0, 0, 0, 0.28);
-            line-height: 1.35;
+            background: #2a2a3a;
         }
 
         .photo-caption:empty {
             display: none;
+        }
+
+        /* ---------- TEMA 1: SİNEMATİK (koyu zemin, altın çerçeve, fotoğraf üstünde yazı) ---------- */
+        body[data-tema="sinematik"] #gallery {
+            background: radial-gradient(ellipse at top, #1d2238 0%, #0b0d17 72%);
+        }
+
+        body[data-tema="sinematik"] .photo-card {
+            padding: 6px;
+            background: linear-gradient(145deg, rgba(212, 175, 120, 0.30), rgba(212, 175, 120, 0.08));
+            border: 1px solid rgba(212, 175, 120, 0.6);
+            border-radius: 6px;
+            box-shadow: 0 14px 30px rgba(0, 0, 0, 0.6);
+        }
+
+        body[data-tema="sinematik"] .photo-card img {
+            border-radius: 3px;
+            filter: contrast(1.05) saturate(0.95);
+        }
+
+        body[data-tema="sinematik"] .photo-caption {
+            position: absolute;
+            left: 6px;
+            right: 6px;
+            bottom: 6px;
+            padding: 38px 12px 10px;
+            border-radius: 0 0 3px 3px;
+            background: linear-gradient(to top, rgba(8, 10, 20, 0.9), transparent);
+            font-family: 'Playfair Display', Georgia, 'Times New Roman', serif;
+            font-style: italic;
+            font-size: 0.95rem;
+            line-height: 1.3;
+            text-align: center;
+            color: #f1dcb3;
+        }
+
+        /* ---------- TEMA 2: PASTEL (yumuşak mor-pembe zemin, yuvarlak krem kartlar) ---------- */
+        body[data-tema="pastel"] #gallery {
+            background: linear-gradient(160deg, #3a2748 0%, #5b3a66 45%, #7a4a6e 100%);
+        }
+
+        body[data-tema="pastel"] .photo-card {
+            padding: 8px 8px 0;
+            background: rgba(255, 244, 248, 0.96);
+            border-radius: 22px;
+            overflow: hidden;
+            box-shadow: 0 10px 26px rgba(40, 10, 40, 0.38), 0 0 0 3px rgba(255, 190, 210, 0.35);
+        }
+
+        body[data-tema="pastel"] .photo-card img {
+            border-radius: 16px;
+        }
+
+        body[data-tema="pastel"] .photo-caption {
+            padding: 8px 8px 11px;
+            font-family: 'Caveat', 'Segoe Print', 'Bradley Hand', cursive;
+            font-size: 1.2rem;
+            font-weight: 600;
+            line-height: 1.15;
+            text-align: center;
+            color: #8a3a5a;
+        }
+
+        /* ---------- TEMA 3: MİNİMAL (sade, ince çizgili, koyu) ---------- */
+        body[data-tema="minimal"] #gallery {
+            background: #0e1118;
+        }
+
+        body[data-tema="minimal"] .photo-card {
+            background: #171b26;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 14px;
+            overflow: hidden;
+            box-shadow: 0 6px 18px rgba(0, 0, 0, 0.35);
+        }
+
+        body[data-tema="minimal"] .photo-caption {
+            padding: 10px 12px;
+            font-family: system-ui, -apple-system, 'Segoe UI', sans-serif;
+            font-size: 0.8rem;
+            letter-spacing: 0.3px;
+            line-height: 1.35;
+            text-align: center;
+            color: rgba(255, 255, 255, 0.75);
+        }
+
+        /* Fare ile üstüne gelince hafif yükselme (sadece bilgisayarda) */
+        @media (hover: hover) {
+            body[data-tema="sinematik"] .photo-card:hover {
+                transform: translateY(-4px);
+                border-color: rgba(212, 175, 120, 0.95);
+                box-shadow: 0 20px 40px rgba(0, 0, 0, 0.7), 0 0 24px rgba(212, 175, 120, 0.25);
+            }
+            body[data-tema="pastel"] .photo-card:hover {
+                transform: translateY(-4px) scale(1.02);
+                box-shadow: 0 16px 34px rgba(40, 10, 40, 0.5), 0 0 0 3px rgba(255, 190, 210, 0.6);
+            }
+            body[data-tema="minimal"] .photo-card:hover {
+                transform: translateY(-3px);
+                border-color: rgba(255, 255, 255, 0.28);
+            }
         }
 
         @keyframes slowScroll {
@@ -279,11 +407,11 @@
 
         @media (max-width: 400px) {
             .photos-track {
-                column-gap: 10px;
+                column-gap: 12px;
                 padding: 220px 12px 90px;
             }
             .photo-card {
-                margin-bottom: 10px;
+                margin-bottom: 14px;
             }
             .kutu {
                 min-width: 48px;
@@ -417,6 +545,9 @@
 </head>
 <body>
 
+    <!-- KİLİT EKRANI ARKA PLAN GÖRSELİ (kilit-arkaplan.jpg dosyası index.html ile aynı klasörde olmalı) -->
+    <div id="kilitArkaplan"></div>
+
     <!-- SAYAÇ -->
     <div id="topBanner">
         <div class="sayac-baslik">Daha dün gibi amaaa </div>
@@ -459,7 +590,7 @@
 
     <!-- 2. SAYAÇ POP-UP (07 Ağustos 2026'dan beri) -->
     <div id="sayacPopup" class="sayac-popup">
-        <div class="sayac-baslik">bizim günümüzün üzerinden</div>
+        <div class="sayac-baslik">7 Ağustos 2026'dan beri</div>
         <div class="sayac-kutular">
             <div class="kutu"><span id="s2Ay">0</span><small>ay</small></div>
             <div class="kutu"><span id="s2Gun">0</span><small>gün</small></div>
@@ -474,7 +605,7 @@
     <!-- ŞİFRE EKRANI -->
     <div class="container" id="loginScreen">
         <h1></h1>
-        <p class="subtitle">Hadi istediğin olsun bakalım</p>
+        <p class="subtitle">Artık biliyorsun zaten</p>
 
         <div class="date-inputs">
             <input type="text" id="day" maxlength="2" placeholder="GG" inputmode="numeric">
@@ -487,7 +618,7 @@
         <button onclick="checkPassword()">Aç</button>
 
         <p class="error" id="errorMsg">ALLAH SENİ KAHRETMESİN PİSLİK HERİF </p>
-        <p class="hint">Aç kapıyı gir içeri</p>
+        <p class="hint">İpucu; Sabah saat 6 da Yavuzun arabayı gördüğümüz gün</p>
     </div>
 
     <!-- GALERİ -->
@@ -565,6 +696,11 @@
     </div>
 
     <script>
+        // ===== TEMA SEÇİMİ =====
+        // Galerinin görünümü: 'sinematik' | 'pastel' | 'minimal'  (sadece tırnak içindeki kelimeyi değiştir)
+        const TEMA = 'sinematik';
+        document.body.dataset.tema = TEMA;
+
         // ===== GALERİ (iki sütun, aynı fotoğraf yan yana gelmez) =====
         // HTML'deki ilk 10 fotoğraf "temel set" olarak saklanır
         const TEMEL_KARTLAR = Array.from(document.querySelectorAll('#photosTrack .photo-card'))
@@ -806,6 +942,7 @@
 
             if (entered === correct) {
                 document.getElementById('loginScreen').style.display = 'none';
+                document.getElementById('kilitArkaplan').style.display = 'none';
                 document.getElementById('gallery').style.display = 'block';
                 document.getElementById('topBanner').style.display = 'block';
 
