@@ -507,48 +507,6 @@
                     <div class="photo-caption"></div>
                 </div>
 
-                <!-- ===== TEKRAR (sonsuz kayma için) ===== -->
-                <div class="photo-card">
-                    <img src="WhatsApp Image 2026-10-31 at 01.21.35.jpeg" alt="anımız">
-                    <div class="photo-caption"></div>
-                </div>
-                <div class="photo-card">
-                    <img src="WhatsApp Image 2026-10-31 at 01.22.31.jpeg" alt="anımız">
-                    <div class="photo-caption"></div>
-                </div>
-                <div class="photo-card">
-                    <img src="WhatsApp Image 2026-10-31 at 01.22.31 (1).jpeg" alt="anımız">
-                    <div class="photo-caption"></div>
-                </div>
-                <div class="photo-card">
-                    <img src="WhatsApp Image 2026-10-31 at 01.21.22.jpeg" alt="anımız">
-                    <div class="photo-caption"></div>
-                </div>
-                <div class="photo-card">
-                    <img src="WhatsApp Image 2026-10-31 at 01.58.58.jpeg" alt="anımız">
-                    <div class="photo-caption"></div>
-                </div>
-                <div class="photo-card">
-                    <img src="WhatsApp Image 2026-10-31 at 02.01.10.jpeg" alt="anımız">
-                    <div class="photo-caption"></div>
-                </div>
-                <div class="photo-card">
-                    <img src="WhatsApp Image 2026-10-31 at 02.00.05.jpeg" alt="anımız">
-                    <div class="photo-caption"></div>
-                </div>
-                <div class="photo-card">
-                    <img src="WhatsApp Image 2026-10-31 at 01.55.49.jpeg" alt="anımız">
-                    <div class="photo-caption"></div>
-                </div>
-                <div class="photo-card">
-                    <img src="WhatsApp Image 2026-10-31 at 01.57.37.jpeg" alt="anımız">
-                    <div class="photo-caption"></div>
-                </div>
-                <div class="photo-card">
-                    <img src="WhatsApp Image 2026-10-31 at 01.53.40.jpeg" alt="anımız">
-                    <div class="photo-caption"></div>
-                </div>
-
             </div>
         </div>
     </div>
@@ -577,7 +535,15 @@
         // Her fotoğraf galeride SADECE BİR KEZ yer alır.
         function galeriyiKur(yeniFotolar) {
             const track = document.getElementById('photosTrack');
-            const tumu = [...yeniFotolar.map(fotoKartiYap), ...TEMEL_KARTLAR.map((k) => k.cloneNode(true))];
+            const gorulen = new Set();
+            const tekil = (anahtar) => { if (!anahtar || gorulen.has(anahtar)) return false; gorulen.add(anahtar); return true; };
+
+            // Aynı fotoğraf iki kez geçse bile sadece ilki alınır
+            const yeniKartlar = yeniFotolar.filter((f) => tekil(f.veri)).map(fotoKartiYap);
+            const hazirKartlar = TEMEL_KARTLAR
+                .filter((k) => tekil(k.querySelector('img').getAttribute('src')))
+                .map((k) => k.cloneNode(true));
+            const tumu = [...yeniKartlar, ...hazirKartlar];
 
             // Sırayla dağıt: 1. sola, 2. sağa, 3. sola... yan yana hep farklı fotoğraf olur
             const sol = document.createElement('div');
