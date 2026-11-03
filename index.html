@@ -196,7 +196,30 @@
             margin-top: 5px;
         }
 
+        /* Galeri arka planı: gece gökyüzü (bulanıklaştırma yok, sadece hafif koyu örtü) */
+        #galeriArkaplan {
+            position: absolute;
+            inset: 0;
+            z-index: 0;
+            background: #05070d url('galeri-arkaplan.jpg') center / cover no-repeat;
+            pointer-events: none;
+            animation: galeriArkaplanGelsin 1.2s ease;
+        }
+
+        #galeriArkaplan::after {
+            content: "";
+            position: absolute;
+            inset: 0;
+            background: rgba(5, 8, 18, 0.28);
+        }
+
+        @keyframes galeriArkaplanGelsin {
+            from { opacity: 0; }
+            to   { opacity: 1; }
+        }
+
         .photos-wrapper {
+            z-index: 1;
             height: 100%;
             overflow-x: hidden;
             overflow-y: auto;          /* elle kaydırılabilir, otomatik kayma JS ile */
@@ -239,45 +262,34 @@
             display: none;
         }
 
-        /* ---------- TEMA 1: SİNEMATİK (koyu zemin, altın çerçeve, fotoğraf üstünde yazı) ---------- */
-        body[data-tema="sinematik"] #gallery {
-            background: radial-gradient(ellipse at top, #1d2238 0%, #0b0d17 72%);
-        }
-
+        /* ---------- TEMA 1: SİNEMATİK (çerçevesiz, sadece ince çizgi; yazı fotoğrafın üstünde) ---------- */
         body[data-tema="sinematik"] .photo-card {
-            padding: 6px;
-            background: linear-gradient(145deg, rgba(212, 175, 120, 0.30), rgba(212, 175, 120, 0.08));
-            border: 1px solid rgba(212, 175, 120, 0.6);
-            border-radius: 6px;
-            box-shadow: 0 14px 30px rgba(0, 0, 0, 0.6);
+            border: 1px solid rgba(255, 255, 255, 0.16);
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 12px 28px rgba(0, 0, 0, 0.55);
         }
 
         body[data-tema="sinematik"] .photo-card img {
-            border-radius: 3px;
-            filter: contrast(1.05) saturate(0.95);
+            filter: contrast(1.04) saturate(0.95);
         }
 
         body[data-tema="sinematik"] .photo-caption {
             position: absolute;
-            left: 6px;
-            right: 6px;
-            bottom: 6px;
+            left: 0;
+            right: 0;
+            bottom: 0;
             padding: 38px 12px 10px;
-            border-radius: 0 0 3px 3px;
-            background: linear-gradient(to top, rgba(8, 10, 20, 0.9), transparent);
+            background: linear-gradient(to top, rgba(5, 8, 18, 0.85), transparent);
             font-family: 'Playfair Display', Georgia, 'Times New Roman', serif;
             font-style: italic;
             font-size: 0.95rem;
             line-height: 1.3;
             text-align: center;
-            color: #f1dcb3;
+            color: #f2f2f2;
         }
 
         /* ---------- TEMA 2: PASTEL (yumuşak mor-pembe zemin, yuvarlak krem kartlar) ---------- */
-        body[data-tema="pastel"] #gallery {
-            background: linear-gradient(160deg, #3a2748 0%, #5b3a66 45%, #7a4a6e 100%);
-        }
-
         body[data-tema="pastel"] .photo-card {
             padding: 8px 8px 0;
             background: rgba(255, 244, 248, 0.96);
@@ -301,10 +313,6 @@
         }
 
         /* ---------- TEMA 3: MİNİMAL (sade, ince çizgili, koyu) ---------- */
-        body[data-tema="minimal"] #gallery {
-            background: #0e1118;
-        }
-
         body[data-tema="minimal"] .photo-card {
             background: #171b26;
             border: 1px solid rgba(255, 255, 255, 0.1);
@@ -327,8 +335,8 @@
         @media (hover: hover) {
             body[data-tema="sinematik"] .photo-card:hover {
                 transform: translateY(-4px);
-                border-color: rgba(212, 175, 120, 0.95);
-                box-shadow: 0 20px 40px rgba(0, 0, 0, 0.7), 0 0 24px rgba(212, 175, 120, 0.25);
+                border-color: rgba(255, 255, 255, 0.4);
+                box-shadow: 0 20px 40px rgba(0, 0, 0, 0.7);
             }
             body[data-tema="pastel"] .photo-card:hover {
                 transform: translateY(-4px) scale(1.02);
@@ -623,6 +631,8 @@
 
     <!-- GALERİ -->
     <div id="gallery">
+        <div id="galeriArkaplan"></div>
+
         <div class="gallery-header">
             <h2> <3 </h2>
             <p>İyi ki sen sevgilim &lt;3</p>
@@ -700,6 +710,9 @@
         // Galerinin görünümü: 'sinematik' | 'pastel' | 'minimal'  (sadece tırnak içindeki kelimeyi değiştir)
         const TEMA = 'sinematik';
         document.body.dataset.tema = TEMA;
+
+        // Galeri arka planını şifre ekranındayken önceden indir, giriş yapınca anında görünsün
+        new Image().src = 'galeri-arkaplan.jpg';
 
         // ===== GALERİ (iki sütun, aynı fotoğraf yan yana gelmez) =====
         // HTML'deki ilk 10 fotoğraf "temel set" olarak saklanır
