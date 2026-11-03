@@ -1,0 +1,761 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>aşk adamıma...</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            color: #fff;
+            overflow: hidden;
+        }
+
+        .container {
+            text-align: center;
+            padding: 40px 30px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 20px;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            max-width: 420px;
+            width: 90%;
+        }
+
+        h1 {
+            font-size: 1.55rem;
+            margin-bottom: 10px;
+            font-weight: 500;
+            letter-spacing: 0.5px;
+            line-height: 1.35;
+        }
+
+        .subtitle {
+            font-size: 0.95rem;
+            opacity: 0.7;
+            margin-bottom: 35px;
+        }
+
+        .date-inputs {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 30px;
+        }
+
+        .date-inputs input {
+            width: 70px;
+            height: 55px;
+            text-align: center;
+            font-size: 1.4rem;
+            font-weight: 600;
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            border-radius: 12px;
+            background: rgba(255, 255, 255, 0.08);
+            color: #fff;
+            outline: none;
+            transition: all 0.3s ease;
+        }
+
+        .date-inputs input:focus {
+            border-color: #e94560;
+            background: rgba(233, 69, 96, 0.15);
+            box-shadow: 0 0 15px rgba(233, 69, 96, 0.3);
+        }
+
+        .date-inputs input::placeholder {
+            color: rgba(255, 255, 255, 0.3);
+            font-size: 1.1rem;
+        }
+
+        .slash {
+            font-size: 1.8rem;
+            opacity: 0.6;
+            font-weight: 300;
+        }
+
+        .date-inputs input.year {
+            width: 95px;
+        }
+
+        button {
+            width: 100%;
+            padding: 14px;
+            font-size: 1.05rem;
+            font-weight: 600;
+            border: none;
+            border-radius: 12px;
+            background: linear-gradient(135deg, #e94560, #c23a51);
+            color: white;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            letter-spacing: 0.5px;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(233, 69, 96, 0.4);
+        }
+
+        .error {
+            color: #ff6b6b;
+            font-size: 0.9rem;
+            margin-top: 15px;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            min-height: 20px;
+        }
+
+        .error.show {
+            opacity: 1;
+        }
+
+        .hint {
+            margin-top: 25px;
+            font-size: 0.8rem;
+            opacity: 0.45;
+        }
+
+        /* ===== GALERİ ===== */
+        #gallery {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            overflow: hidden;
+            z-index: 100;
+        }
+
+        .gallery-header {
+            position: absolute;
+            top: 105px;
+            left: 0;
+            right: 0;
+            padding: 12px 20px 12px;
+            text-align: center;
+            background: linear-gradient(to bottom, rgba(0,0,0,0.65), transparent);
+            z-index: 20;
+        }
+
+        .gallery-header h2 {
+            font-size: 1.35rem;
+            font-weight: 500;
+            letter-spacing: 0.5px;
+        }
+
+        .gallery-header p {
+            font-size: 0.82rem;
+            opacity: 0.7;
+            margin-top: 5px;
+        }
+
+        .photos-wrapper {
+            height: 100%;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .photos-track {
+            column-count: 2;
+            column-gap: 14px;
+            padding: 230px 16px 80px;
+            animation: slowScroll 70s linear infinite;
+            width: 100%;
+        }
+
+        .photo-card {
+            break-inside: avoid;
+            margin-bottom: 14px;
+            background: rgba(255, 255, 255, 0.07);
+            border-radius: 16px;
+            overflow: hidden;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 10px 28px rgba(0, 0, 0, 0.3);
+            cursor: zoom-in;
+        }
+
+        .photo-card img {
+            width: 100%;
+            height: auto;
+            display: block;
+        }
+
+        .photo-caption {
+            padding: 12px 14px;
+            font-size: 0.84rem;
+            text-align: center;
+            background: rgba(0, 0, 0, 0.28);
+            line-height: 1.35;
+        }
+
+        .photo-caption:empty {
+            display: none;
+        }
+
+        @keyframes slowScroll {
+            0% { transform: translateY(0); }
+            100% { transform: translateY(-50%); }
+        }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            20% { transform: translateX(-8px); }
+            40% { transform: translateX(8px); }
+            60% { transform: translateX(-8px); }
+            80% { transform: translateX(8px); }
+        }
+
+        /* ===== SAYAÇ BANNER ===== */
+        #topBanner {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            background: rgba(0, 0, 0, 0.75);
+            backdrop-filter: blur(8px);
+            text-align: center;
+            padding: 10px 10px 8px;
+            z-index: 999;
+        }
+
+        .sayac-baslik {
+            font-size: 0.8rem;
+            opacity: 0.75;
+            margin-bottom: 6px;
+        }
+
+        .sayac-kutular {
+            display: flex;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .kutu {
+            min-width: 52px;
+            padding: 6px 4px;
+            background: rgba(233, 69, 96, 0.18);
+            border: 1px solid rgba(233, 69, 96, 0.4);
+            border-radius: 10px;
+        }
+
+        .kutu span {
+            display: block;
+            font-size: 1.2rem;
+            font-weight: 700;
+            font-variant-numeric: tabular-nums;
+        }
+
+        .kutu small {
+            font-size: 0.65rem;
+            opacity: 0.7;
+        }
+
+        .sayac-toplam {
+            font-size: 0.72rem;
+            opacity: 0.6;
+            margin-top: 5px;
+        }
+
+        @media (max-width: 400px) {
+            .photos-track {
+                column-gap: 10px;
+                padding: 220px 12px 70px;
+            }
+            .photo-card {
+                margin-bottom: 10px;
+            }
+            .kutu {
+                min-width: 48px;
+            }
+            .sayac-kutular {
+                gap: 6px;
+            }
+        }
+
+        /* ===== GÜNLÜK NOT POP-UP ===== */
+        #noteOverlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.65);
+            backdrop-filter: blur(6px);
+            z-index: 1500;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        #noteOverlay.show {
+            display: flex;
+            animation: fadeIn 0.4s ease;
+        }
+
+        .note-card {
+            position: relative;
+            max-width: 380px;
+            width: 100%;
+            max-height: 80vh;
+            overflow-y: auto;
+            padding: 34px 26px 26px;
+            text-align: center;
+            background: linear-gradient(145deg, rgba(233, 69, 96, 0.22), rgba(22, 33, 62, 0.95));
+            border: 1px solid rgba(233, 69, 96, 0.45);
+            border-radius: 22px;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+            animation: popIn 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+
+        .note-heart {
+            font-size: 2.2rem;
+            margin-bottom: 6px;
+            animation: beat 1.4s ease-in-out infinite;
+        }
+
+        .note-date {
+            font-size: 0.78rem;
+            opacity: 0.6;
+            margin-bottom: 14px;
+        }
+
+        .note-text {
+            font-size: 1.05rem;
+            line-height: 1.6;
+            white-space: pre-line;
+            margin-bottom: 22px;
+        }
+
+        .note-close {
+            padding: 11px 26px;
+            width: auto;
+            font-size: 0.95rem;
+        }
+
+        #noteBtn {
+            display: none;
+            position: fixed;
+            right: 16px;
+            bottom: 18px;
+            width: 52px;
+            height: 52px;
+            padding: 0;
+            font-size: 1.5rem;
+            border-radius: 50%;
+            z-index: 500;
+        }
+
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes popIn  { from { opacity: 0; transform: scale(0.7) translateY(20px); } to { opacity: 1; transform: scale(1) translateY(0); } }
+        @keyframes beat   { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.18); } }
+    </style>
+</head>
+<body>
+
+    <!-- SAYAÇ -->
+    <div id="topBanner">
+        <div class="sayac-baslik">Daha dün gibi amaaa </div>
+        <div class="sayac-kutular">
+            <div class="kutu"><span id="sAy">0</span><small>ay</small></div>
+            <div class="kutu"><span id="sGun">0</span><small>gün</small></div>
+            <div class="kutu"><span id="sSaat">00</span><small>saat</small></div>
+            <div class="kutu"><span id="sDk">00</span><small>dakika</small></div>
+            <div class="kutu"><span id="sSn">00</span><small>saniye</small></div>
+        </div>
+        <div class="sayac-toplam">Toplam <b id="toplamGun">0</b> gün</div>
+    </div>
+
+    <!-- LIGHTBOX -->
+    <div id="lightbox" style="
+        display: none;
+        position: fixed;
+        inset: 0;
+        background: rgba(0,0,0,0.92);
+        z-index: 2000;
+        justify-content: center;
+        align-items: center;
+        cursor: zoom-out;
+    ">
+        <img id="lightboxImg" alt="" style="max-width: 92%; max-height: 92%; border-radius: 12px; object-fit: contain;">
+    </div>
+
+    <!-- GÜNLÜK NOT (lightbox'ın DIŞINDA olmalı) -->
+    <div id="noteOverlay">
+        <div class="note-card">
+            <div class="note-heart">💌</div>
+            <div class="note-date" id="noteDate"></div>
+            <div class="note-text" id="noteText"></div>
+            <button class="note-close" onclick="notuKapat()">❤️</button>
+        </div>
+    </div>
+
+    <!-- Notu tekrar açma butonu -->
+    <button id="noteBtn" onclick="notuAc()" title="Günün notu">💌</button>
+
+    <!-- ŞİFRE EKRANI -->
+    <div class="container" id="loginScreen">
+        <h1></h1>
+        <p class="subtitle">Artık biliyorsun zaten</p>
+
+        <div class="date-inputs">
+            <input type="text" id="day" maxlength="2" placeholder="GG" inputmode="numeric">
+            <span class="slash">/</span>
+            <input type="text" id="month" maxlength="2" placeholder="AA" inputmode="numeric">
+            <span class="slash">/</span>
+            <input type="text" id="year" class="year" maxlength="4" placeholder="YYYY" inputmode="numeric">
+        </div>
+
+        <button onclick="checkPassword()">Aç</button>
+
+        <p class="error" id="errorMsg">ALLAH SENİ KAHRETMESİN PİSLİK HERİF </p>
+        <p class="hint">İpucu; Sabah saat 6 da Yavuzun arabayı gördüğümüz gün</p>
+    </div>
+
+    <!-- GALERİ -->
+    <div id="gallery">
+        <div class="gallery-header">
+            <h2> <3 </h2>
+            <p>İyi ki sen sevgilim &lt;3</p>
+        </div>
+
+        <div class="photos-wrapper">
+            <div class="photos-track" id="photosTrack">
+
+                <!-- 1 -->
+                <div class="photo-card">
+                    <img src="WhatsApp Image 2026-10-31 at 01.21.22.jpeg" alt="anımız">
+                    <div class="photo-caption"></div>
+                </div>
+
+                <!-- 2 -->
+                <div class="photo-card">
+                    <img src="WhatsApp Image 2026-10-31 at 01.21.35.jpeg" alt="anımız">
+                    <div class="photo-caption"></div>
+                </div>
+
+                <!-- 3 -->
+                <div class="photo-card">
+                    <img src="WhatsApp Image 2026-10-31 at 01.22.31 (1).jpeg" alt="anımız">
+                    <div class="photo-caption"></div>
+                </div>
+
+                <!-- 4 -->
+                <div class="photo-card">
+                    <img src="WhatsApp Image 2026-10-31 at 01.22.31.jpeg" alt="anımız">
+                    <div class="photo-caption"></div>
+                </div>
+
+                <!-- 5 -->
+                <div class="photo-card">
+                    <img src="WhatsApp Image 2026-10-31 at 01.53.40.jpeg" alt="anımız">
+                    <div class="photo-caption"></div>
+                </div>
+
+                <!-- 6 -->
+                <div class="photo-card">
+                    <img src="WhatsApp Image 2026-10-31 at 02.00.05.jpeg" alt="anımız">
+                    <div class="photo-caption"></div>
+                </div>
+
+                <!-- 7 -->
+                <div class="photo-card">
+                    <img src="WhatsApp Image 2026-10-31 at 01.57.37.jpeg" alt="anımız">
+                    <div class="photo-caption"></div>
+                </div>
+
+                <!-- 8 -->
+                <div class="photo-card">
+                    <img src="WhatsApp Image 2026-10-31 at 02.01.10.jpeg" alt="anımız">
+                    <div class="photo-caption"></div>
+                </div>
+
+                <!-- 9 -->
+                <div class="photo-card">
+                    <img src="WhatsApp Image 2026-10-31 at 01.58.58.jpeg" alt="anımız">
+                    <div class="photo-caption"></div>
+                </div>
+
+                <!-- 10 -->
+                <div class="photo-card">
+                    <img src="WhatsApp Image 2026-10-31 at 01.55.49.jpeg" alt="anımız">
+                    <div class="photo-caption"></div>
+                </div>
+
+                <!-- ===== TEKRAR (sonsuz kayma için) ===== -->
+                <div class="photo-card">
+                    <img src="WhatsApp Image 2026-10-31 at 01.21.35.jpeg" alt="anımız">
+                    <div class="photo-caption"></div>
+                </div>
+                <div class="photo-card">
+                    <img src="WhatsApp Image 2026-10-31 at 01.22.31.jpeg" alt="anımız">
+                    <div class="photo-caption"></div>
+                </div>
+                <div class="photo-card">
+                    <img src="WhatsApp Image 2026-10-31 at 01.22.31 (1).jpeg" alt="anımız">
+                    <div class="photo-caption"></div>
+                </div>
+                <div class="photo-card">
+                    <img src="WhatsApp Image 2026-10-31 at 01.21.22.jpeg" alt="anımız">
+                    <div class="photo-caption"></div>
+                </div>
+                <div class="photo-card">
+                    <img src="WhatsApp Image 2026-10-31 at 01.58.58.jpeg" alt="anımız">
+                    <div class="photo-caption"></div>
+                </div>
+                <div class="photo-card">
+                    <img src="WhatsApp Image 2026-10-31 at 02.01.10.jpeg" alt="anımız">
+                    <div class="photo-caption"></div>
+                </div>
+                <div class="photo-card">
+                    <img src="WhatsApp Image 2026-10-31 at 02.00.05.jpeg" alt="anımız">
+                    <div class="photo-caption"></div>
+                </div>
+                <div class="photo-card">
+                    <img src="WhatsApp Image 2026-10-31 at 01.55.49.jpeg" alt="anımız">
+                    <div class="photo-caption"></div>
+                </div>
+                <div class="photo-card">
+                    <img src="WhatsApp Image 2026-10-31 at 01.57.37.jpeg" alt="anımız">
+                    <div class="photo-caption"></div>
+                </div>
+                <div class="photo-card">
+                    <img src="WhatsApp Image 2026-10-31 at 01.53.40.jpeg" alt="anımız">
+                    <div class="photo-caption"></div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ===== LIGHTBOX =====
+        document.addEventListener('click', function (e) {
+            if (e.target.tagName === 'IMG' && e.target.closest('.photo-card')) {
+                document.getElementById('lightboxImg').src = e.target.src;
+                document.getElementById('lightbox').style.display = 'flex';
+            }
+        });
+
+        document.getElementById('lightbox').addEventListener('click', function () {
+            this.style.display = 'none';
+        });
+
+        // ===== ŞİFRE GİRİŞİ =====
+        const day = document.getElementById('day');
+        const month = document.getElementById('month');
+        const year = document.getElementById('year');
+
+        day.addEventListener('input', () => {
+            if (day.value.length === 2) month.focus();
+        });
+        month.addEventListener('input', () => {
+            if (month.value.length === 2) year.focus();
+        });
+
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') checkPassword();
+        });
+
+        // ===== SAYAÇ =====
+        // 07 Şubat 2026 (JavaScript'te aylar 0'dan başlar: Ocak = 0, Şubat = 1)
+        // Saati de eklemek istersen: new Date(2026, 1, 7, 21, 30, 0)
+        const BASLANGIC = new Date(2026, 1, 7, 0, 0, 0);
+        let sayacInterval = null;
+
+        function sayaciGuncelle() {
+            const simdi = new Date();
+
+            // Takvime göre tam ay sayısı
+            let ay = (simdi.getFullYear() - BASLANGIC.getFullYear()) * 12
+                   + (simdi.getMonth() - BASLANGIC.getMonth());
+            let ankraj = new Date(BASLANGIC);
+            ankraj.setMonth(BASLANGIC.getMonth() + ay);
+            if (ankraj > simdi) {
+                ay--;
+                ankraj = new Date(BASLANGIC);
+                ankraj.setMonth(BASLANGIC.getMonth() + ay);
+            }
+
+            // Tam aydan sonra kalan süre
+            const fark = simdi - ankraj;
+            const gun = Math.floor(fark / 86400000);
+            const saat = Math.floor((fark % 86400000) / 3600000);
+            const dk = Math.floor((fark % 3600000) / 60000);
+            const sn = Math.floor((fark % 60000) / 1000);
+
+            const pad = n => String(n).padStart(2, '0');
+            document.getElementById('sAy').textContent = ay;
+            document.getElementById('sGun').textContent = gun;
+            document.getElementById('sSaat').textContent = pad(saat);
+            document.getElementById('sDk').textContent = pad(dk);
+            document.getElementById('sSn').textContent = pad(sn);
+            document.getElementById('toplamGun').textContent =
+                Math.floor((simdi - BASLANGIC) / 86400000);
+        }
+
+        // ===== GÜNLÜK NOT =====
+        // Her gün sırayla bir sonraki not gösterilir, liste bitince başa döner.
+        // Notları istediğin kadar ekleyebilirsin (satır atlamak için \n kullan).
+        const NOTLAR = [
+
+            // buraya yenilerini ekle...
+        ];
+
+        // Belirli bir güne özel not (YYYY-AA-GG). Bu tarihte sıradaki not yerine bu görünür.
+        const OZEL_NOTLAR = {
+            "2026-11-07": "9. ayımız kutlu olsun aşkım! 🎉\nSeni çok seviyorum.",
+            "2026-12-31": "Yeni yıla seninle girmek en büyük hediye ❤️"
+        };
+
+        function gununNotunuGetir() {
+            // Yönetici panelinden girilen canlı not varsa önce o gösterilir
+            if (window.CANLI_NOT) return window.CANLI_NOT;
+
+            const bugun = new Date();
+            const anahtar = `${bugun.getFullYear()}-${String(bugun.getMonth() + 1).padStart(2, '0')}-${String(bugun.getDate()).padStart(2, '0')}`;
+
+            if (OZEL_NOTLAR[anahtar]) return OZEL_NOTLAR[anahtar];
+
+            // Hazır liste boşsa (ve panelden not girilmediyse) sadece kalp göster
+            if (!NOTLAR.length) return "❤️";
+
+            // Başlangıçtan bu yana geçen gün sayısına göre sıradaki not
+            const gunSayisi = Math.floor((new Date(bugun.getFullYear(), bugun.getMonth(), bugun.getDate()) - BASLANGIC) / 86400000);
+            const index = ((gunSayisi % NOTLAR.length) + NOTLAR.length) % NOTLAR.length;
+            return NOTLAR[index];
+        }
+
+        function notuAc() {
+            document.getElementById('noteDate').textContent =
+                new Date().toLocaleDateString('tr-TR', { day: 'numeric', month: 'long', year: 'numeric', weekday: 'long' });
+            document.getElementById('noteText').textContent = gununNotunuGetir();
+            document.getElementById('noteOverlay').classList.add('show');
+        }
+
+        function notuKapat() {
+            document.getElementById('noteOverlay').classList.remove('show');
+        }
+
+        document.getElementById('noteOverlay').addEventListener('click', function (e) {
+            if (e.target === this) notuKapat();
+        });
+
+        // ===== ŞİFRE KONTROLÜ =====
+        function checkPassword() {
+            const d = day.value.padStart(2, '0');
+            const m = month.value.padStart(2, '0');
+            const y = year.value;
+            const entered = `${d}/${m}/${y}`;
+            const correct = "07/08/2026";
+            const errorMsg = document.getElementById('errorMsg');
+
+            if (entered === correct) {
+                document.getElementById('loginScreen').style.display = 'none';
+                document.getElementById('gallery').style.display = 'block';
+                document.getElementById('topBanner').style.display = 'block';
+
+                sayaciGuncelle();
+                if (!sayacInterval) sayacInterval = setInterval(sayaciGuncelle, 1000);
+
+                // Günlük not pop-up'ı
+                document.getElementById('noteBtn').style.display = 'block';
+                setTimeout(notuAc, 700);
+            } else {
+                errorMsg.classList.add('show');
+                document.querySelector('.date-inputs').style.animation = 'shake 0.4s';
+                setTimeout(() => {
+                    document.querySelector('.date-inputs').style.animation = '';
+                    errorMsg.classList.remove('show');
+                }, 1500);
+            }
+        }
+    </script>
+
+    <!-- ===== FIREBASE: YÖNETİCİ PANELİNDEN GELEN CANLI NOT ===== -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js";
+        import { getFirestore, doc, onSnapshot, collection, query, orderBy, limit }
+            from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
+
+        // ====== BURAYI KENDİ FIREBASE BİLGİLERİNLE DEĞİŞTİR (admin.html ile aynı) ======
+        const firebaseConfig = {
+            apiKey: "AIzaSyCGJShg-OYUPmjg0D3yw2INrdfPiPPWxBU",
+            authDomain: "admin-7659a.firebaseapp.com",
+            projectId: "admin-7659a",
+            storageBucket: "admin-7659a.firebasestorage.app",
+            messagingSenderId: "155622622732",
+            appId: "1:155622622732:web:607b42a6ea36370a161029"
+        };
+        // ===============================================================================
+
+        try {
+            const app = initializeApp(firebaseConfig);
+            const db = getFirestore(app);
+
+            const b = new Date();
+            const anahtar = `${b.getFullYear()}-${String(b.getMonth() + 1).padStart(2, '0')}-${String(b.getDate()).padStart(2, '0')}`;
+
+            // Bugünün notunu canlı dinle: panelden kaydedince anında buraya düşer
+            onSnapshot(doc(db, "notlar", anahtar), (snap) => {
+                window.CANLI_NOT = snap.exists() ? snap.data().metin : null;
+
+                // Pop-up o an açıksa yenilemeden güncelle
+                const overlay = document.getElementById('noteOverlay');
+                if (overlay.classList.contains('show')) {
+                    document.getElementById('noteText').textContent = gununNotunuGetir();
+                }
+            }, (err) => console.warn("Canlı not okunamadı, hazır liste kullanılacak:", err.code));
+
+            // ----- Panelden yüklenen fotoğraflar (galeriye canlı eklenir) -----
+            const FOTO_LIMITI = 40; // en yeni kaç fotoğraf gösterilsin
+            const track = document.getElementById('photosTrack');
+
+            // Koddaki ilk 10 hazır fotoğraf temel set olarak saklanır
+            const temelKartlar = Array.from(track.querySelectorAll('.photo-card'))
+                .slice(0, 10)
+                .map((k) => k.cloneNode(true));
+
+            function kartYap(f) {
+                const kart = document.createElement('div');
+                kart.className = 'photo-card';
+                const img = document.createElement('img');
+                img.src = f.veri;
+                img.alt = 'anımız';
+                const cap = document.createElement('div');
+                cap.className = 'photo-caption';
+                cap.textContent = f.baslik || '';
+                kart.append(img, cap);
+                return kart;
+            }
+
+            function galeriyiKur(fotolar) {
+                // Yeni fotoğraflar en üstte, altında hazır fotoğraflar; sonsuz kayma için set iki kez eklenir
+                const set = [...fotolar.map(kartYap), ...temelKartlar.map((k) => k.cloneNode(true))];
+                track.replaceChildren(...set, ...set.map((k) => k.cloneNode(true)));
+                track.style.animationDuration = Math.max(70, set.length * 7) + 's';
+            }
+
+            onSnapshot(
+                query(collection(db, "fotolar"), orderBy("olusturma", "desc"), limit(FOTO_LIMITI)),
+                (snap) => galeriyiKur(snap.docs.map((d) => d.data()).filter((f) => f.veri)),
+                (err) => console.warn("Fotoğraflar okunamadı, hazır fotoğraflar kullanılacak:", err.code)
+            );
+        } catch (e) {
+            console.warn("Firebase başlatılamadı, hazır liste kullanılacak:", e);
+        }
+    </script>
+
+</body>
+</html>

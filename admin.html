@@ -12,8 +12,8 @@
             min-height: 100vh;
             display: flex;
             justify-content: center;
-            align-items: center;
-            padding: 20px;
+            align-items: flex-start;
+            padding: 24px 16px 40px;
             background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             color: #fff;
@@ -21,8 +21,9 @@
 
         .panel {
             width: 100%;
-            max-width: 440px;
-            padding: 32px 26px;
+            max-width: 480px;
+            margin: auto 0;
+            padding: 28px 22px;
             background: rgba(255, 255, 255, 0.06);
             border: 1px solid rgba(255, 255, 255, 0.12);
             border-radius: 20px;
@@ -31,7 +32,7 @@
         }
 
         h1 { font-size: 1.35rem; font-weight: 500; margin-bottom: 6px; text-align: center; }
-        .sub { font-size: 0.85rem; opacity: 0.65; text-align: center; margin-bottom: 22px; }
+        .sub { font-size: 0.85rem; opacity: 0.65; text-align: center; margin-bottom: 20px; }
 
         label { display: block; font-size: 0.8rem; opacity: 0.7; margin: 14px 0 6px; }
 
@@ -55,6 +56,8 @@
             box-shadow: 0 0 15px rgba(233, 69, 96, 0.3);
         }
 
+        input[type="file"] { padding: 10px; font-size: 0.9rem; }
+
         textarea { min-height: 170px; resize: vertical; line-height: 1.5; }
 
         .count { font-size: 0.75rem; opacity: 0.5; text-align: right; margin-top: 4px; }
@@ -76,17 +79,70 @@
         button:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(233, 69, 96, 0.4); }
         button:disabled { opacity: 0.5; cursor: wait; transform: none; box-shadow: none; }
 
-        .row { display: flex; gap: 10px; }
-        .row button { margin-top: 12px; }
-
         button.ghost {
             background: rgba(255, 255, 255, 0.1);
             border: 1px solid rgba(255, 255, 255, 0.2);
         }
 
-        .msg { min-height: 22px; margin-top: 14px; font-size: 0.88rem; text-align: center; }
+        .msg { min-height: 22px; margin-top: 14px; font-size: 0.88rem; text-align: center; line-height: 1.4; }
         .msg.ok { color: #7bed9f; }
         .msg.err { color: #ff6b6b; }
+
+        /* Sekmeler */
+        .tabs { display: flex; gap: 8px; margin-bottom: 20px; }
+        .tab {
+            margin-top: 0;
+            padding: 11px 8px;
+            font-size: 0.92rem;
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+        }
+        .tab.active { background: linear-gradient(135deg, #e94560, #c23a51); border-color: transparent; }
+
+        /* Fotoğraf listesi */
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 8px;
+            margin-top: 18px;
+        }
+
+        .thumb {
+            position: relative;
+            aspect-ratio: 1;
+            border-radius: 12px;
+            overflow: hidden;
+            background: rgba(255, 255, 255, 0.06);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+        }
+
+        .thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+
+        .thumb .cap {
+            position: absolute;
+            left: 0; right: 0; bottom: 0;
+            padding: 14px 6px 4px;
+            font-size: 0.65rem;
+            line-height: 1.2;
+            background: linear-gradient(to top, rgba(0, 0, 0, 0.75), transparent);
+            overflow: hidden;
+            white-space: nowrap;
+            text-overflow: ellipsis;
+        }
+
+        .thumb .del {
+            position: absolute;
+            top: 5px; right: 5px;
+            width: 28px; height: 28px;
+            margin: 0; padding: 0;
+            font-size: 0.85rem;
+            border-radius: 50%;
+            background: rgba(0, 0, 0, 0.7);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+
+        .empty { grid-column: 1 / -1; text-align: center; opacity: 0.55; font-size: 0.88rem; padding: 18px 0; }
+        .total { font-size: 0.8rem; opacity: 0.6; margin-top: 16px; text-align: center; }
     </style>
 </head>
 <body>
@@ -106,34 +162,57 @@
         <p class="msg" id="loginMsg"></p>
     </div>
 
-    <!-- NOT DÜZENLEME -->
+    <!-- PANEL -->
     <div class="panel" id="editBox" style="display:none">
-        <h1>💌 Günün Notu</h1>
-        <p class="sub">Kaydedince siteye anında düşer</p>
-
-        <label for="tarih">Hangi gün için?</label>
-        <input type="date" id="tarih">
-
-        <label for="metin">Not</label>
-        <textarea id="metin" placeholder="Bugünkü notunu yaz aşkım..."></textarea>
-        <div class="count"><span id="sayi">0</span> karakter</div>
-
-        <button id="kaydetBtn">Kaydet</button>
-        <div class="row">
-            <button class="ghost" id="silBtn">Bu günün notunu sil</button>
-            <button class="ghost" id="cikisBtn">Çıkış</button>
+        <div class="tabs">
+            <button class="tab active" data-tab="not">💌 Günün notu</button>
+            <button class="tab" data-tab="foto">📷 Fotoğraflar</button>
         </div>
-        <p class="msg" id="editMsg"></p>
+
+        <!-- NOT SEKMESİ -->
+        <div id="tabNot">
+            <p class="sub">Kaydedince siteye anında düşer</p>
+
+            <label for="tarih">Hangi gün için?</label>
+            <input type="date" id="tarih">
+
+            <label for="metin">Not</label>
+            <textarea id="metin" placeholder="Bugünkü notunu yaz aşkım..."></textarea>
+            <div class="count"><span id="sayi">0</span> karakter</div>
+
+            <button id="kaydetBtn">Kaydet</button>
+            <button class="ghost" id="silBtn">Bu günün notunu sil</button>
+            <p class="msg" id="editMsg"></p>
+        </div>
+
+        <!-- FOTOĞRAF SEKMESİ -->
+        <div id="tabFoto" style="display:none">
+            <p class="sub">Yüklediğin fotoğraflar sitedeki galeriye anında eklenir</p>
+
+            <label for="dosyalar">Fotoğraf seç (birden fazla seçebilirsin)</label>
+            <input type="file" id="dosyalar" accept="image/*" multiple>
+
+            <label for="baslik">Alt yazı (isteğe bağlı, seçtiklerinin hepsine yazılır)</label>
+            <input type="text" id="baslik" maxlength="120" placeholder="örn. İlk buluşmamız ❤️">
+
+            <button id="yukleBtn">Yükle</button>
+            <p class="msg" id="fotoMsg"></p>
+
+            <div class="grid" id="fotoListe"></div>
+            <p class="total" id="fotoToplam"></p>
+        </div>
+
+        <button class="ghost" id="cikisBtn">Çıkış</button>
     </div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js";
         import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged }
             from "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
-        import { getFirestore, doc, getDoc, setDoc, deleteDoc, serverTimestamp }
+        import { getFirestore, doc, getDoc, setDoc, deleteDoc, serverTimestamp,
+                 collection, addDoc, query, orderBy, limit, onSnapshot }
             from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
 
-        // ====== BURAYI KENDİ FIREBASE BİLGİLERİNLE DEĞİŞTİR ======
         const firebaseConfig = {
             apiKey: "AIzaSyCGJShg-OYUPmjg0D3yw2INrdfPiPPWxBU",
             authDomain: "admin-7659a.firebaseapp.com",
@@ -142,7 +221,6 @@
             messagingSenderId: "155622622732",
             appId: "1:155622622732:web:607b42a6ea36370a161029"
         };
-        // =========================================================
 
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
@@ -160,6 +238,13 @@
             return `${b.getFullYear()}-${String(b.getMonth() + 1).padStart(2, '0')}-${String(b.getDate()).padStart(2, '0')}`;
         }
 
+        function hataYazisi(e) {
+            if (e.code === 'permission-denied') {
+                return 'İzin yok. Firebase Rules bölümüne "fotolar" kuralını eklediğinden emin ol.';
+            }
+            return (e.code || e.message || 'bilinmeyen hata');
+        }
+
         // ----- Giriş / çıkış -----
         async function girisYap() {
             const btn = $('girisBtn');
@@ -171,7 +256,7 @@
             } catch (e) {
                 const kod = e.code || e.message;
                 const acik = {
-                    'auth/invalid-credential': 'E-posta ya da şifre hatalı (ya da bu kullanıcı yok).',
+                    'auth/invalid-credential': 'E-posta ya da şifre hatalı.',
                     'auth/invalid-email': 'E-posta adresi geçersiz görünüyor.',
                     'auth/operation-not-allowed': 'Firebase\'de Email/Password girişi açık değil.',
                     'auth/too-many-requests': 'Çok fazla deneme yapıldı, biraz bekle.',
@@ -186,16 +271,31 @@
         $('sifre').addEventListener('keydown', (e) => { if (e.key === 'Enter') girisYap(); });
         $('cikisBtn').addEventListener('click', () => signOut(auth));
 
+        let fotoDinleyiciKapat = null;
+
         onAuthStateChanged(auth, (user) => {
             $('loginBox').style.display = user ? 'none' : 'block';
             $('editBox').style.display = user ? 'block' : 'none';
             if (user) {
                 if (!$('tarih').value) $('tarih').value = bugunAnahtar();
                 notuYukle();
+                fotolariDinle();
+            } else if (fotoDinleyiciKapat) {
+                fotoDinleyiciKapat();
+                fotoDinleyiciKapat = null;
             }
         });
 
-        // ----- Not yükle / kaydet / sil -----
+        // ----- Sekmeler -----
+        document.querySelectorAll('.tab').forEach((t) => {
+            t.addEventListener('click', () => {
+                document.querySelectorAll('.tab').forEach((x) => x.classList.toggle('active', x === t));
+                $('tabNot').style.display = t.dataset.tab === 'not' ? 'block' : 'none';
+                $('tabFoto').style.display = t.dataset.tab === 'foto' ? 'block' : 'none';
+            });
+        });
+
+        // ===================== NOT =====================
         async function notuYukle() {
             const gun = $('tarih').value;
             if (!gun) return;
@@ -206,7 +306,7 @@
                 $('sayi').textContent = $('metin').value.length;
                 mesaj($('editMsg'), snap.exists() ? 'Bu güne ait kayıtlı not yüklendi.' : 'Bu gün için henüz not yok.');
             } catch (e) {
-                mesaj($('editMsg'), 'Not okunamadı: ' + e.message, 'err');
+                mesaj($('editMsg'), 'Not okunamadı: ' + hataYazisi(e), 'err');
             }
         }
 
@@ -224,7 +324,7 @@
                 await setDoc(doc(db, 'notlar', gun), { metin, guncelleme: serverTimestamp() });
                 mesaj($('editMsg'), 'Kaydedildi ✅ Site güncellendi.', 'ok');
             } catch (e) {
-                mesaj($('editMsg'), 'Kaydedilemedi: ' + e.message, 'err');
+                mesaj($('editMsg'), 'Kaydedilemedi: ' + hataYazisi(e), 'err');
             }
             $('kaydetBtn').disabled = false;
         });
@@ -238,9 +338,138 @@
                 $('sayi').textContent = '0';
                 mesaj($('editMsg'), 'Silindi. O gün sitedeki hazır listeden not gösterilecek.', 'ok');
             } catch (e) {
-                mesaj($('editMsg'), 'Silinemedi: ' + e.message, 'err');
+                mesaj($('editMsg'), 'Silinemedi: ' + hataYazisi(e), 'err');
             }
         });
+
+        // ===================== FOTOĞRAF =====================
+        const MAX_KENAR = 1100;      // fotoğrafın uzun kenarı en fazla bu kadar piksel olur
+        const MAX_KARAKTER = 900000; // Firestore belge sınırı (1 MB) altında kalmak için
+
+        function resmiSikistir(dosya) {
+            return new Promise((resolve, reject) => {
+                const url = URL.createObjectURL(dosya);
+                const img = new Image();
+                img.onload = () => {
+                    URL.revokeObjectURL(url);
+                    const oran = Math.min(1, MAX_KENAR / Math.max(img.naturalWidth, img.naturalHeight));
+                    const w = Math.round(img.naturalWidth * oran);
+                    const h = Math.round(img.naturalHeight * oran);
+
+                    const c = document.createElement('canvas');
+                    c.width = w;
+                    c.height = h;
+                    c.getContext('2d').drawImage(img, 0, 0, w, h);
+
+                    let kalite = 0.75;
+                    let veri = c.toDataURL('image/jpeg', kalite);
+                    while (veri.length > MAX_KARAKTER && kalite > 0.3) {
+                        kalite -= 0.1;
+                        veri = c.toDataURL('image/jpeg', kalite);
+                    }
+                    if (veri.length > MAX_KARAKTER) return reject(new Error('Fotoğraf çok büyük, küçültülemedi.'));
+                    resolve({ veri, genislik: w, yukseklik: h });
+                };
+                img.onerror = () => {
+                    URL.revokeObjectURL(url);
+                    reject(new Error('Fotoğraf okunamadı.'));
+                };
+                img.src = url;
+            });
+        }
+
+        $('yukleBtn').addEventListener('click', async () => {
+            const dosyalar = Array.from($('dosyalar').files);
+            const baslik = $('baslik').value.trim();
+            if (!dosyalar.length) return mesaj($('fotoMsg'), 'Önce fotoğraf seç.', 'err');
+
+            $('yukleBtn').disabled = true;
+            let basarili = 0;
+            const hatalar = [];
+
+            for (let i = 0; i < dosyalar.length; i++) {
+                mesaj($('fotoMsg'), `Yükleniyor... (${i + 1}/${dosyalar.length})`);
+                try {
+                    const { veri, genislik, yukseklik } = await resmiSikistir(dosyalar[i]);
+                    await addDoc(collection(db, 'fotolar'), {
+                        veri, genislik, yukseklik, baslik,
+                        olusturma: serverTimestamp()
+                    });
+                    basarili++;
+                } catch (e) {
+                    hatalar.push(dosyalar[i].name + ': ' + hataYazisi(e));
+                }
+            }
+
+            $('yukleBtn').disabled = false;
+
+            if (hatalar.length) {
+                mesaj($('fotoMsg'), `${basarili} yüklendi, ${hatalar.length} hata: ` + hatalar.join(' | '), 'err');
+            } else {
+                mesaj($('fotoMsg'), `${basarili} fotoğraf yüklendi ✅ Galeriye eklendi.`, 'ok');
+                $('dosyalar').value = '';
+                $('baslik').value = '';
+            }
+        });
+
+        function fotolariDinle() {
+            if (fotoDinleyiciKapat) fotoDinleyiciKapat();
+
+            const q = query(collection(db, 'fotolar'), orderBy('olusturma', 'desc'), limit(60));
+            fotoDinleyiciKapat = onSnapshot(q, (snap) => {
+                const liste = $('fotoListe');
+                liste.replaceChildren();
+
+                if (snap.empty) {
+                    const bos = document.createElement('div');
+                    bos.className = 'empty';
+                    bos.textContent = 'Henüz yüklenmiş fotoğraf yok.';
+                    liste.append(bos);
+                    $('fotoToplam').textContent = '';
+                    return;
+                }
+
+                snap.docs.forEach((d) => {
+                    const f = d.data();
+                    if (!f.veri) return;
+
+                    const kutu = document.createElement('div');
+                    kutu.className = 'thumb';
+
+                    const img = document.createElement('img');
+                    img.src = f.veri;
+                    img.alt = '';
+
+                    const sil = document.createElement('button');
+                    sil.className = 'del';
+                    sil.textContent = '✕';
+                    sil.title = 'Sil';
+                    sil.addEventListener('click', async () => {
+                        if (!confirm('Bu fotoğraf galeriden silinsin mi?')) return;
+                        try {
+                            await deleteDoc(doc(db, 'fotolar', d.id));
+                        } catch (e) {
+                            mesaj($('fotoMsg'), 'Silinemedi: ' + hataYazisi(e), 'err');
+                        }
+                    });
+
+                    kutu.append(img, sil);
+
+                    if (f.baslik) {
+                        const cap = document.createElement('div');
+                        cap.className = 'cap';
+                        cap.textContent = f.baslik;
+                        kutu.append(cap);
+                    }
+
+                    liste.append(kutu);
+                });
+
+                $('fotoToplam').textContent = `${snap.size} fotoğraf (siteye en yeni 40 tanesi gösterilir)`;
+            }, (e) => {
+                mesaj($('fotoMsg'), 'Liste okunamadı: ' + hataYazisi(e), 'err');
+            });
+        }
     </script>
 </body>
 </html>
