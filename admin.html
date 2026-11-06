@@ -329,7 +329,7 @@
         // >>> MAIL
         // EmailJS panelinden alacağın üç bilgiyi tırnakların içine yapıştır:
         const EMAILJS_SERVIS  = "service_3jrgaj6";
-        const EMAILJS_SABLON  = "service_3jrgaj6";
+        const EMAILJS_SABLON  = "template_qsoc9qn";
         const EMAILJS_ANAHTAR = "zTwvwLTumfE4UA28S";
 
         // Mailin içinde görünecek site adresi
@@ -338,8 +338,11 @@
         // Kısa süre içinde yanlışlıkla art arda mail gitmesin diye uyarı süresi (dakika)
         const MAIL_BEKLEME_DK = 10;
 
+        // Bilgiler doğru biçimde girilmiş mi? (Service ID "service_", Template ID "template_" ile başlar)
         function mailAyariVar() {
-            return ![EMAILJS_SERVIS, EMAILJS_SABLON, EMAILJS_ANAHTAR].some((d) => d.startsWith("zTwvwLTumfE4UA28S"));
+            return EMAILJS_SERVIS.startsWith("service_")
+                && EMAILJS_SABLON.startsWith("template_")
+                && EMAILJS_ANAHTAR.length >= 10;
         }
 
         function sonMailZamani() {
@@ -413,7 +416,7 @@
                     if (gun !== bugunAnahtar()) {
                         ek = ' Mail gönderilmedi: bu not bugüne ait değil.';
                     } else if (!mailAyariVar()) {
-                        ek = ' Mail ayarı henüz yapılmamış, mail gitmedi.';
+                        ek = ' Mail ayarı eksik ya da hatalı (Service ID, Template ID ve Public Key kontrol et), mail gitmedi.';
                         ekTur = 'err';
                     } else if (Date.now() - sonMailZamani() < MAIL_BEKLEME_DK * 60000
                                && !confirm('Son ' + MAIL_BEKLEME_DK + ' dakika içinde zaten mail gönderdin. Yine de göndereyim mi?')) {
