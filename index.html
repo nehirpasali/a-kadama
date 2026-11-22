@@ -1049,7 +1049,7 @@
                 metin.textContent = n.metin;
                 blok.append(metin);
 
-                if (n.yazar && canli.length > 1) {
+               if (n.yazar) {
                     const k = document.createElement('div');
                     k.className = 'note-author';
                     k.textContent = '— ' + n.yazar;
