@@ -106,6 +106,25 @@
 
         .check small { display: block; opacity: 0.6; margin-top: 2px; font-size: 0.75rem; }
 
+        /* Şarkı alanı */
+        .sarki-onizleme {
+            display: none;
+            align-items: center;
+            gap: 10px;
+            margin-top: 10px;
+            padding: 8px 10px;
+            font-size: 0.85rem;
+            background: rgba(29, 185, 84, 0.12);
+            border: 1px solid rgba(29, 185, 84, 0.4);
+            border-radius: 12px;
+        }
+
+        .sarki-onizleme img { width: 44px; height: 44px; border-radius: 6px; object-fit: cover; flex: none; }
+        .sarki-onizleme span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .sarki-msg { min-height: 18px; margin-top: 8px; font-size: 0.78rem; opacity: 0.8; }
+        .sarki-msg.err { color: #ff6b6b; opacity: 1; }
+        .sarki-msg.ok { color: #7bed9f; opacity: 1; }
+
         .msg { min-height: 22px; margin-top: 14px; font-size: 0.88rem; text-align: center; line-height: 1.4; }
         .msg.ok { color: #7bed9f; }
         .msg.err { color: #ff6b6b; }
@@ -201,6 +220,12 @@
             <label for="metin">Not</label>
             <textarea id="metin" placeholder="Bugünkü notunu yaz aşkım..."></textarea>
             <div class="count"><span id="sayi">0</span> karakter</div>
+
+            <label for="sarkiUrl">🎵 Günün şarkısı (isteğe bağlı)</label>
+            <input type="url" id="sarkiUrl" placeholder="Spotify linki: Paylaş → Bağlantıyı kopyala" autocomplete="off" inputmode="url">
+            <input type="text" id="sarkiBaslik" maxlength="100" placeholder="Şarkı adı – sanatçı (otomatik dolar, değiştirebilirsin)" style="margin-top: 8px;">
+            <div class="sarki-onizleme" id="sarkiOnizleme"></div>
+            <p class="sarki-msg" id="sarkiMsg"></p>
 
             <label class="check" for="mailGonder">
                 <input type="checkbox" id="mailGonder" checked>
@@ -329,7 +354,7 @@
         // >>> MAIL
         // EmailJS panelinden alacağın üç bilgiyi tırnakların içine yapıştır:
         const EMAILJS_SERVIS  = "service_3jrgaj6";
-        const EMAILJS_SABLON  = "template_81q4bf9";
+        const EMAILJS_SABLON  = "template_qsoc9qn";
         const EMAILJS_ANAHTAR = "zTwvwLTumfE4UA28S";
 
         // Mailin içinde görünecek site adresi
@@ -381,6 +406,85 @@
                 : 'Bu not ileri bir tarih için, o gün gelince site zaten gösterecek (mail gönderilmez)';
         }
 
+        // ===================== ŞARKI (Spotify) =====================
+        // >>> SARKI
+        function spotifyLinkiGecerli(u) {
+            try {
+                const x = new URL(u);
+                return x.protocol === 'https:' && ['open.spotify.com', 'spotify.link'].includes(x.hostname);
+            } catch (e) { return false; }
+        }
+
+        function kapakGecerli(u) {
+            try {
+                const x = new URL(u);
+                return x.protocol === 'https:' && x.hostname.endsWith('scdn.co');
+            } catch (e) { return false; }
+        }
+
+        // Spotify'ın resmî oEmbed servisinden şarkı adı ve albüm kapağını alır
+        async function spotifyBilgisiGetir(url) {
+            const c = await fetch('https://open.spotify.com/oembed?url=' + encodeURIComponent(url));
+            if (!c.ok) throw new Error('oembed ' + c.status);
+            const j = await c.json();
+            return { baslik: j.title || '', kapak: j.thumbnail_url || '' };
+        }
+        // <<< SARKI
+
+        let sarkiKapak = '';
+        let sarkiZamanlayici = null;
+
+        function sarkiMesaji(yazi, tur) {
+            $('sarkiMsg').textContent = yazi;
+            $('sarkiMsg').className = 'sarki-msg ' + (tur || '');
+        }
+
+        function sarkiOnizlemeGoster() {
+            const kutu = $('sarkiOnizleme');
+            const url = $('sarkiUrl').value.trim();
+            if (!url || !spotifyLinkiGecerli(url)) { kutu.style.display = 'none'; return; }
+            kutu.replaceChildren();
+            if (kapakGecerli(sarkiKapak)) {
+                const img = document.createElement('img');
+                img.src = sarkiKapak;
+                img.alt = '';
+                kutu.append(img);
+            }
+            const yazi = document.createElement('span');
+            yazi.textContent = $('sarkiBaslik').value.trim() || 'Spotify şarkısı';
+            kutu.append(yazi);
+            kutu.style.display = 'flex';
+        }
+
+        async function sarkiLinkiDegisti() {
+            const url = $('sarkiUrl').value.trim();
+            sarkiKapak = '';
+            if (!url) { sarkiMesaji(''); sarkiOnizlemeGoster(); return; }
+            if (!spotifyLinkiGecerli(url)) {
+                sarkiMesaji('Bu bir Spotify linki gibi görünmüyor (open.spotify.com ile başlamalı).', 'err');
+                sarkiOnizlemeGoster();
+                return;
+            }
+            sarkiMesaji('Şarkı bilgisi alınıyor...');
+            sarkiOnizlemeGoster();
+            try {
+                const b = await spotifyBilgisiGetir(url);
+                if ($('sarkiUrl').value.trim() !== url) return; // bu arada link değiştiyse eski cevabı yoksay
+                if (!$('sarkiBaslik').value.trim() && b.baslik) $('sarkiBaslik').value = b.baslik;
+                sarkiKapak = b.kapak;
+                sarkiMesaji('Şarkı bulundu ✅ İstersen adın yanına sanatçıyı da yazabilirsin.', 'ok');
+            } catch (e) {
+                sarkiMesaji('Link kabul edildi, ama şarkı adı otomatik alınamadı. İstersen adı elle yaz.');
+            }
+            sarkiOnizlemeGoster();
+        }
+
+        $('sarkiUrl').addEventListener('input', () => {
+            clearTimeout(sarkiZamanlayici);
+            sarkiZamanlayici = setTimeout(sarkiLinkiDegisti, 500);
+        });
+        $('sarkiBaslik').addEventListener('input', sarkiOnizlemeGoster);
+
         // ===================== NOT =====================
         async function notuYukle() {
             const gun = $('tarih').value;
@@ -388,8 +492,14 @@
             mesaj($('editMsg'), 'Yükleniyor...');
             try {
                 const snap = await getDoc(doc(db, 'notlar', gun));
-                $('metin').value = snap.exists() ? snap.data().metin : '';
+                const veri = snap.exists() ? snap.data() : null;
+                $('metin').value = veri ? veri.metin : '';
                 $('sayi').textContent = $('metin').value.length;
+                $('sarkiUrl').value = (veri && veri.sarki && veri.sarki.url) || '';
+                $('sarkiBaslik').value = (veri && veri.sarki && veri.sarki.baslik) || '';
+                sarkiKapak = (veri && veri.sarki && veri.sarki.kapak) || '';
+                sarkiMesaji('');
+                sarkiOnizlemeGoster();
                 mesaj($('editMsg'), snap.exists() ? 'Bu güne ait kayıtlı not yüklendi.' : 'Bu gün için henüz not yok.');
             } catch (e) {
                 mesaj($('editMsg'), 'Not okunamadı: ' + hataYazisi(e), 'err');
@@ -405,9 +515,22 @@
             if (!gun) return mesaj($('editMsg'), 'Bir tarih seç.', 'err');
             if (!metin) return mesaj($('editMsg'), 'Not boş olamaz.', 'err');
 
+            const sarkiUrl = $('sarkiUrl').value.trim();
+            if (sarkiUrl && !spotifyLinkiGecerli(sarkiUrl)) {
+                return mesaj($('editMsg'), 'Şarkı linki geçerli değil. open.spotify.com ile başlayan bir link yapıştır ya da şarkı kutusunu boş bırak.', 'err');
+            }
+
             $('kaydetBtn').disabled = true;
             try {
-                await setDoc(doc(db, 'notlar', gun), { metin, guncelleme: serverTimestamp() });
+                const veri = { metin, guncelleme: serverTimestamp() };
+                if (sarkiUrl) {
+                    veri.sarki = {
+                        url: sarkiUrl,
+                        baslik: $('sarkiBaslik').value.trim(),
+                        kapak: kapakGecerli(sarkiKapak) ? sarkiKapak : ''
+                    };
+                }
+                await setDoc(doc(db, 'notlar', gun), veri);
 
                 // ---- Mail bildirimi ----
                 let ek = '';
@@ -446,6 +569,11 @@
                 await deleteDoc(doc(db, 'notlar', gun));
                 $('metin').value = '';
                 $('sayi').textContent = '0';
+                $('sarkiUrl').value = '';
+                $('sarkiBaslik').value = '';
+                sarkiKapak = '';
+                sarkiMesaji('');
+                sarkiOnizlemeGoster();
                 mesaj($('editMsg'), 'Silindi. O gün sitedeki hazır listeden not gösterilecek.', 'ok');
             } catch (e) {
                 mesaj($('editMsg'), 'Silinemedi: ' + hataYazisi(e), 'err');
