@@ -84,28 +84,6 @@
             border: 1px solid rgba(255, 255, 255, 0.2);
         }
 
-        .check {
-            display: flex;
-            align-items: flex-start;
-            gap: 10px;
-            margin: 16px 0 0;
-            font-size: 0.88rem;
-            opacity: 0.95;
-            cursor: pointer;
-        }
-
-        .check input[type="checkbox"] {
-            width: 20px;
-            height: 20px;
-            padding: 0;
-            margin-top: 1px;
-            flex: none;
-            border-radius: 4px;
-            accent-color: #e94560;
-        }
-
-        .check small { display: block; opacity: 0.6; margin-top: 2px; font-size: 0.75rem; }
-
         /* Şarkı alanı */
         .sarki-onizleme {
             display: none;
@@ -190,8 +168,8 @@
 
     <!-- GİRİŞ -->
     <div class="panel" id="loginBox">
-        <h1>Yönetici Girişi 🔐</h1>
-        <p class="sub">Sadece sen girebilirsin</p>
+        <h1>Giriş 🔐</h1>
+        <p class="sub">Sadece ikimiz girebiliriz</p>
 
         <label for="email">E-posta</label>
         <input type="email" id="email" autocomplete="username">
@@ -212,13 +190,13 @@
 
         <!-- NOT SEKMESİ -->
         <div id="tabNot">
-            <p class="sub">Kaydedince siteye anında düşer</p>
+            <p class="sub" id="yazarBilgi">Kaydedince siteye anında düşer</p>
 
             <label for="tarih">Hangi gün için?</label>
             <input type="date" id="tarih">
 
             <label for="metin">Not</label>
-            <textarea id="metin" placeholder="Bugünkü notunu yaz aşkım..."></textarea>
+            <textarea id="metin" placeholder="Bugünkü notunu yaz..."></textarea>
             <div class="count"><span id="sayi">0</span> karakter</div>
 
             <label for="sarkiUrl">🎵 Günün şarkısı (isteğe bağlı)</label>
@@ -226,13 +204,6 @@
             <input type="text" id="sarkiBaslik" maxlength="100" placeholder="Şarkı adı – sanatçı (otomatik dolar, değiştirebilirsin)" style="margin-top: 8px;">
             <div class="sarki-onizleme" id="sarkiOnizleme"></div>
             <p class="sarki-msg" id="sarkiMsg"></p>
-
-            <label class="check" for="mailGonder">
-                <input type="checkbox" id="mailGonder" checked>
-                <span>Kaydedince ona "siteye bak" maili gönder 💌
-                    <small id="mailNot">Mail sadece bugünün notu için gider</small>
-                </span>
-            </label>
 
             <button id="kaydetBtn">Kaydet</button>
             <button class="ghost" id="silBtn">Bu günün notunu sil</button>
@@ -282,6 +253,19 @@
 
         const $ = (id) => document.getElementById(id);
 
+        // ===================== YAZARLAR =====================
+        // >>> Firebase'de açtığınız iki hesabın e-postalarını (küçük harfle) ve görünecek adları yaz.
+        // sfx: notun belge adına eklenen son ek. SENİN notun "" kalsın (eski notların bozulmasın),
+        // onunki "_o" olsun. Sitede notun altında "ad" görünür.
+        const YAZARLAR = {
+            "senin@mail.com": { ad: "SENİN ADIN", sfx: "" },
+            "onun@mail.com":  { ad: "ONUN ADI",   sfx: "_o" }
+        };
+        // <<< YAZARLAR
+
+        let yazar = { ad: 'Yönetici', sfx: '' };
+        const notId = (gun) => gun + yazar.sfx;
+
         function mesaj(el, text, tur) {
             el.textContent = text;
             el.className = 'msg ' + (tur || '');
@@ -294,7 +278,7 @@
 
         function hataYazisi(e) {
             if (e.code === 'permission-denied') {
-                return 'İzin yok. Firebase Rules bölümüne "fotolar" kuralını eklediğinden emin ol.';
+                return 'İzin yok. Firebase Rules bölümünde senin UID\'inin yazma iznine sahip olduğundan emin ol.';
             }
             return (e.code || e.message || 'bilinmeyen hata');
         }
@@ -331,9 +315,10 @@
             $('loginBox').style.display = user ? 'none' : 'block';
             $('editBox').style.display = user ? 'block' : 'none';
             if (user) {
+                yazar = YAZARLAR[(user.email || '').toLowerCase()] || { ad: 'Yönetici', sfx: '' };
+                $('yazarBilgi').textContent = yazar.ad + ' olarak giriş yaptın. Kaydedince siteye anında düşer.';
                 if (!$('tarih').value) $('tarih').value = bugunAnahtar();
                 notuYukle();
-                mailKutusunuAyarla();
                 fotolariDinle();
             } else if (fotoDinleyiciKapat) {
                 fotoDinleyiciKapat();
@@ -350,64 +335,7 @@
             });
         });
 
-        // ===================== MAİL BİLDİRİMİ (EmailJS) =====================
-        // >>> MAIL
-        // EmailJS panelinden alacağın üç bilgiyi tırnakların içine yapıştır:
-        const EMAILJS_SERVIS  = "service_3jrgaj6";
-        const EMAILJS_SABLON  = "template_qsoc9qn";
-        const EMAILJS_ANAHTAR = "zTwvwLTumfE4UA28S";
-
-        // Mailin içinde görünecek site adresi
-        const SITE_ADRESI = "https://nehirpasali.github.io/a-kadama/";
-
-        // Kısa süre içinde yanlışlıkla art arda mail gitmesin diye uyarı süresi (dakika)
-        const MAIL_BEKLEME_DK = 10;
-
-        // Bilgiler doğru biçimde girilmiş mi? (Service ID "service_", Template ID "template_" ile başlar)
-        function mailAyariVar() {
-            return EMAILJS_SERVIS.startsWith("service_")
-                && EMAILJS_SABLON.startsWith("template_")
-                && EMAILJS_ANAHTAR.length >= 10;
-        }
-
-        function sonMailZamani() {
-            try { return Number(localStorage.getItem('sonMailZamani')) || 0; } catch (e) { return 0; }
-        }
-
-        function sonMailZamaniniKaydet() {
-            try { localStorage.setItem('sonMailZamani', String(Date.now())); } catch (e) { /* önemli değil */ }
-        }
-
-        async function bildirimMailiGonder() {
-            const cevap = await fetch('https://api.emailjs.com/api/v1.0/email/send', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    service_id: EMAILJS_SERVIS,
-                    template_id: EMAILJS_SABLON,
-                    user_id: EMAILJS_ANAHTAR,
-                    template_params: {
-                        site_url: SITE_ADRESI,
-                        // Her mail farklı görünsün (Gmail aynı konulu mailleri tek konuşmada toplar)
-                        zaman: new Date().toLocaleString('tr-TR', { day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' })
-                    }
-                })
-            });
-            if (!cevap.ok) throw new Error((await cevap.text()) || ('Hata kodu ' + cevap.status));
-        }
-        // <<< MAIL
-
-        // Not bugüne aitse mail kutusu işaretli gelir, ileri bir tarihse işareti kalkar
-        function mailKutusunuAyarla() {
-            const bugun = $('tarih').value === bugunAnahtar();
-            $('mailGonder').checked = bugun;
-            $('mailNot').textContent = bugun
-                ? 'Mail sadece bugünün notu için gider'
-                : 'Bu not ileri bir tarih için, o gün gelince site zaten gösterecek (mail gönderilmez)';
-        }
-
         // ===================== ŞARKI (Spotify) =====================
-        // >>> SARKI
         function spotifyLinkiGecerli(u) {
             try {
                 const x = new URL(u);
@@ -429,7 +357,6 @@
             const j = await c.json();
             return { baslik: j.title || '', kapak: j.thumbnail_url || '' };
         }
-        // <<< SARKI
 
         let sarkiKapak = '';
         let sarkiZamanlayici = null;
@@ -491,7 +418,7 @@
             if (!gun) return;
             mesaj($('editMsg'), 'Yükleniyor...');
             try {
-                const snap = await getDoc(doc(db, 'notlar', gun));
+                const snap = await getDoc(doc(db, 'notlar', notId(gun)));
                 const veri = snap.exists() ? snap.data() : null;
                 $('metin').value = veri ? veri.metin : '';
                 $('sayi').textContent = $('metin').value.length;
@@ -500,13 +427,13 @@
                 sarkiKapak = (veri && veri.sarki && veri.sarki.kapak) || '';
                 sarkiMesaji('');
                 sarkiOnizlemeGoster();
-                mesaj($('editMsg'), snap.exists() ? 'Bu güne ait kayıtlı not yüklendi.' : 'Bu gün için henüz not yok.');
+                mesaj($('editMsg'), snap.exists() ? 'Bu güne ait kayıtlı notun yüklendi.' : 'Bu gün için henüz notun yok.');
             } catch (e) {
                 mesaj($('editMsg'), 'Not okunamadı: ' + hataYazisi(e), 'err');
             }
         }
 
-        $('tarih').addEventListener('change', () => { notuYukle(); mailKutusunuAyarla(); });
+        $('tarih').addEventListener('change', notuYukle);
         $('metin').addEventListener('input', () => { $('sayi').textContent = $('metin').value.length; });
 
         $('kaydetBtn').addEventListener('click', async () => {
@@ -522,7 +449,7 @@
 
             $('kaydetBtn').disabled = true;
             try {
-                const veri = { metin, guncelleme: serverTimestamp() };
+                const veri = { metin, yazar: yazar.ad, guncelleme: serverTimestamp() };
                 if (sarkiUrl) {
                     veri.sarki = {
                         url: sarkiUrl,
@@ -530,32 +457,8 @@
                         kapak: kapakGecerli(sarkiKapak) ? sarkiKapak : ''
                     };
                 }
-                await setDoc(doc(db, 'notlar', gun), veri);
-
-                // ---- Mail bildirimi ----
-                let ek = '';
-                let ekTur = 'ok';
-                if ($('mailGonder').checked) {
-                    if (gun !== bugunAnahtar()) {
-                        ek = ' Mail gönderilmedi: bu not bugüne ait değil.';
-                    } else if (!mailAyariVar()) {
-                        ek = ' Mail ayarı eksik ya da hatalı (Service ID, Template ID ve Public Key kontrol et), mail gitmedi.';
-                        ekTur = 'err';
-                    } else if (Date.now() - sonMailZamani() < MAIL_BEKLEME_DK * 60000
-                               && !confirm('Son ' + MAIL_BEKLEME_DK + ' dakika içinde zaten mail gönderdin. Yine de göndereyim mi?')) {
-                        ek = ' Mail gönderilmedi.';
-                    } else {
-                        try {
-                            await bildirimMailiGonder();
-                            sonMailZamaniniKaydet();
-                            ek = ' Mail gönderildi 📧';
-                        } catch (e) {
-                            ek = ' ⚠️ Mail gönderilemedi: ' + (e.message || e);
-                            ekTur = 'err';
-                        }
-                    }
-                }
-                mesaj($('editMsg'), 'Kaydedildi ✅ Site güncellendi.' + ek, ekTur);
+                await setDoc(doc(db, 'notlar', notId(gun)), veri);
+                mesaj($('editMsg'), 'Kaydedildi ✅ Site güncellendi.', 'ok');
             } catch (e) {
                 mesaj($('editMsg'), 'Kaydedilemedi: ' + hataYazisi(e), 'err');
             }
@@ -564,9 +467,9 @@
 
         $('silBtn').addEventListener('click', async () => {
             const gun = $('tarih').value;
-            if (!gun || !confirm(gun + ' tarihli not silinsin mi?')) return;
+            if (!gun || !confirm(gun + ' tarihli notun silinsin mi?')) return;
             try {
-                await deleteDoc(doc(db, 'notlar', gun));
+                await deleteDoc(doc(db, 'notlar', notId(gun)));
                 $('metin').value = '';
                 $('sayi').textContent = '0';
                 $('sarkiUrl').value = '';
@@ -574,7 +477,7 @@
                 sarkiKapak = '';
                 sarkiMesaji('');
                 sarkiOnizlemeGoster();
-                mesaj($('editMsg'), 'Silindi. O gün sitedeki hazır listeden not gösterilecek.', 'ok');
+                mesaj($('editMsg'), 'Silindi.', 'ok');
             } catch (e) {
                 mesaj($('editMsg'), 'Silinemedi: ' + hataYazisi(e), 'err');
             }
@@ -631,6 +534,7 @@
                     const { veri, genislik, yukseklik } = await resmiSikistir(dosyalar[i]);
                     await addDoc(collection(db, 'fotolar'), {
                         veri, genislik, yukseklik, baslik,
+                        yazar: yazar.ad,
                         olusturma: serverTimestamp()
                     });
                     basarili++;
@@ -693,10 +597,11 @@
 
                     kutu.append(img, sil);
 
-                    if (f.baslik) {
+                    const altYazi = [f.yazar, f.baslik].filter(Boolean).join(': ');
+                    if (altYazi) {
                         const cap = document.createElement('div');
                         cap.className = 'cap';
-                        cap.textContent = f.baslik;
+                        cap.textContent = altYazi;
                         kutu.append(cap);
                     }
 
