@@ -481,9 +481,24 @@
             margin-bottom: 22px;
         }
 
+        /* Her yazarın notu ayrı blok olur (iki not varsa araya çizgi girer) */
+        .note-block { margin-bottom: 8px; }
+
+        .note-block + .note-block {
+            margin-top: 18px;
+            padding-top: 18px;
+            border-top: 1px solid rgba(255, 255, 255, 0.12);
+        }
+
+        .note-author {
+            font-size: 0.8rem;
+            opacity: 0.65;
+            margin: -10px 0 18px;
+        }
+
         /* Günün şarkısı (Spotify'a giden buton) */
         .note-song {
-            display: none;
+            display: flex;
             align-items: center;
             gap: 12px;
             margin: 0 0 20px;
@@ -660,12 +675,7 @@
         <div class="note-card">
             <div class="note-heart">💌</div>
             <div class="note-date" id="noteDate"></div>
-            <div class="note-text" id="noteText"></div>
-            <a id="noteSong" class="note-song" href="#" target="_blank" rel="noopener noreferrer">
-                <span class="song-kapak" id="noteSongKapak">🎵</span>
-                <span class="song-yazi"><small>Bugünün şarkısı</small><b id="noteSongBaslik"></b></span>
-                <span class="song-git">▶</span>
-            </a>
+            <div id="noteList"></div>
             <button class="note-close" onclick="notuKapat()">❤️</button>
         </div>
     </div>
@@ -959,10 +969,8 @@
             "2026-12-31": "Yeni yıla seninle girmek en büyük hediye ❤️"
         };
 
+        // Panelden not girilmemişse gösterilecek hazır not
         function gununNotunuGetir() {
-            // Yönetici panelinden girilen canlı not varsa önce o gösterilir
-            if (window.CANLI_NOT) return window.CANLI_NOT;
-
             const bugun = new Date();
             const anahtar = `${bugun.getFullYear()}-${String(bugun.getMonth() + 1).padStart(2, '0')}-${String(bugun.getDate()).padStart(2, '0')}`;
 
@@ -977,23 +985,21 @@
             return NOTLAR[index];
         }
 
-        // Panelden bir Spotify şarkısı girilmişse pop-up'ta butonu gösterir (yalnızca güvenli adresler kabul edilir)
-        function sarkiyiGoster() {
-            const el = document.getElementById('noteSong');
-            const s = window.CANLI_SARKI;
-            let gecerli = false;
+        // Panelden girilen Spotify şarkısı için buton üretir (yalnızca güvenli adresler kabul edilir)
+        function spotifyKartiYap(s) {
             try {
                 const x = new URL(s.url);
-                gecerli = x.protocol === 'https:' && ['open.spotify.com', 'spotify.link'].includes(x.hostname);
-            } catch (e) { /* geçersiz */ }
+                if (!(x.protocol === 'https:' && ['open.spotify.com', 'spotify.link'].includes(x.hostname))) return null;
+            } catch (e) { return null; }
 
-            if (!gecerli) { el.style.display = 'none'; return; }
+            const a = document.createElement('a');
+            a.className = 'note-song';
+            a.href = s.url;
+            a.target = '_blank';
+            a.rel = 'noopener noreferrer';
 
-            el.href = s.url;
-            document.getElementById('noteSongBaslik').textContent = s.baslik || "Spotify'da dinle";
-
-            const kapak = document.getElementById('noteSongKapak');
-            kapak.replaceChildren();
+            const kapak = document.createElement('span');
+            kapak.className = 'song-kapak';
             let kapakVar = false;
             try {
                 const k = new URL(s.kapak);
@@ -1007,14 +1013,63 @@
             } else {
                 kapak.textContent = '🎵';
             }
-            el.style.display = 'flex';
+
+            const yazi = document.createElement('span');
+            yazi.className = 'song-yazi';
+            const kucuk = document.createElement('small');
+            kucuk.textContent = 'Bugünün şarkısı';
+            const b = document.createElement('b');
+            b.textContent = s.baslik || "Spotify'da dinle";
+            yazi.append(kucuk, b);
+
+            const git = document.createElement('span');
+            git.className = 'song-git';
+            git.textContent = '▶';
+
+            a.append(kapak, yazi, git);
+            return a;
         }
+
+        // Bugünün notlarını çizer: panelden gelen notlar (senin + onun), yoksa hazır not
+        function notlariCiz() {
+            const liste = document.getElementById('noteList');
+            liste.replaceChildren();
+
+            const canli = ['a', 'o']
+                .map((k) => (window.CANLI || {})[k])
+                .filter((n) => n && n.metin);
+            if (!canli.length) canli.push({ metin: gununNotunuGetir() });
+
+            canli.forEach((n) => {
+                const blok = document.createElement('div');
+                blok.className = 'note-block';
+
+                const metin = document.createElement('div');
+                metin.className = 'note-text';
+                metin.textContent = n.metin;
+                blok.append(metin);
+
+                if (n.yazar && canli.length > 1) {
+                    const k = document.createElement('div');
+                    k.className = 'note-author';
+                    k.textContent = '— ' + n.yazar;
+                    blok.append(k);
+                }
+
+                if (n.sarki) {
+                    const kart = spotifyKartiYap(n.sarki);
+                    if (kart) blok.append(kart);
+                }
+
+                liste.append(blok);
+            });
+        }
+        window.notlariCiz = notlariCiz;
 
         function notuAc() {
             document.getElementById('noteDate').textContent =
                 new Date().toLocaleDateString('tr-TR', { day: 'numeric', month: 'long', year: 'numeric', weekday: 'long' });
-            document.getElementById('noteText').textContent = gununNotunuGetir();
-            sarkiyiGoster();
+            notlariCiz();
             document.getElementById('noteOverlay').classList.add('show');
         }
 
@@ -1088,13 +1143,13 @@
         }
     </script>
 
-    <!-- ===== FIREBASE: YÖNETİCİ PANELİNDEN GELEN CANLI NOT ===== -->
+    <!-- ===== FIREBASE: YÖNETİCİ PANELİNDEN GELEN CANLI NOTLAR VE FOTOĞRAFLAR ===== -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js";
         import { getFirestore, doc, onSnapshot, collection, query, orderBy, limit }
             from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
 
-        // ====== BURAYI KENDİ FIREBASE BİLGİLERİNLE DEĞİŞTİR (admin.html ile aynı) ======
+        // admin.html ile aynı Firebase bilgileri
         const firebaseConfig = {
             apiKey: "AIzaSyCGJShg-OYUPmjg0D3yw2INrdfPiPPWxBU",
             authDomain: "admin-7659a.firebaseapp.com",
@@ -1103,7 +1158,6 @@
             messagingSenderId: "155622622732",
             appId: "1:155622622732:web:607b42a6ea36370a161029"
         };
-        // ===============================================================================
 
         try {
             const app = initializeApp(firebaseConfig);
@@ -1112,18 +1166,19 @@
             const b = new Date();
             const anahtar = `${b.getFullYear()}-${String(b.getMonth() + 1).padStart(2, '0')}-${String(b.getDate()).padStart(2, '0')}`;
 
-            // Bugünün notunu canlı dinle: panelden kaydedince anında buraya düşer
-            onSnapshot(doc(db, "notlar", anahtar), (snap) => {
-                window.CANLI_NOT = snap.exists() ? snap.data().metin : null;
-                window.CANLI_SARKI = snap.exists() ? (snap.data().sarki || null) : null;
+            // Bugünün iki notunu canlı dinle: panelden kaydedince anında buraya düşer
+            // 'a' = ilk yazarın notu (belge adı: 2026-11-23), 'o' = ikinci yazarın notu (belge adı: 2026-11-23_o)
+            window.CANLI = { a: null, o: null };
+
+            const notuDinle = (docId, k) => onSnapshot(doc(db, "notlar", docId), (snap) => {
+                window.CANLI[k] = snap.exists() ? snap.data() : null;
 
                 // Pop-up o an açıksa yenilemeden güncelle
-                const overlay = document.getElementById('noteOverlay');
-                if (overlay.classList.contains('show')) {
-                    document.getElementById('noteText').textContent = gununNotunuGetir();
-                    sarkiyiGoster();
-                }
+                if (document.getElementById('noteOverlay').classList.contains('show')) window.notlariCiz();
             }, (err) => console.warn("Canlı not okunamadı, hazır liste kullanılacak:", err.code));
+
+            notuDinle(anahtar, 'a');
+            notuDinle(anahtar + '_o', 'o');
 
             // ----- Panelden yüklenen fotoğraflar (galeriye canlı eklenir) -----
             const FOTO_LIMITI = 40; // en yeni kaç fotoğraf gösterilsin
